@@ -29,10 +29,10 @@ namespace lwsxx
     virtual bool canProcess(std::string protocolName) const { (void)protocolName; return false; };
 
     virtual void onSessionAdded(WebSocketSession*) {}
+    virtual void onSessionRemoved(WebSocketSession*) {}
 
   private:
     void addSession(WebSocketSession* session);
-
     void removeSession(WebSocketSession* session);
 
     std::vector<WebSocketSession*> _sessions;

@@ -14,6 +14,7 @@ void WebSocketHandler::addSession(WebSocketSession* session)
 void WebSocketHandler::removeSession(WebSocketSession* session)
 {
   _sessions.erase(std::remove(_sessions.begin(), _sessions.end(), session));
+  onSessionRemoved(session);
 }
 
 void WebSocketHandler::send(WebSocketBuffer& buffer)
