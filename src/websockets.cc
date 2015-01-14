@@ -21,20 +21,34 @@ WebSockets::WebSockets(int port)
   // LLL_ERR | LLL_WARN | LLL_NOTICE | LLL_INFO | LLL_DEBUG |
   // LLL_PARSER | LLL_HEADER | LLL_EXT | LLL_CLIENT | LLL_LATENCY
 
+  // Adapt log level based upon felix's config
+  // NOTE this assumes that log::minLevel doesn't change over time
+  int levelMask = 0;
+  if (log::minLevel <= LogLevel::Error)
+    levelMask |= LLL_ERR;
+  if (log::minLevel <= LogLevel::Warning)
+    levelMask |= LLL_WARN;
+  if (log::minLevel <= LogLevel::Info)
+    levelMask |= LLL_NOTICE;
+  if (log::minLevel <= LogLevel::Verbose)
+    levelMask |= LLL_INFO | LLL_DEBUG;
+
   lws_set_log_level(
-    LLL_ERR | LLL_WARN | LLL_NOTICE,
+    levelMask,
     [](int level, const char* msg)
     {
       // Trim the newline character
-      string l(msg);
-      l = l.substr(0, l.length() - 1);
+      int len = (int)strlen(msg);
+      string l(msg, 0, (ulong)max(0, len - 1));
 
       if (level == LLL_ERR)
         log::error("libwebsockets") << l;
       else if (level == LLL_WARN)
         log::warning("libwebsockets") << l;
-      else
+      else if (level == LLL_NOTICE)
         log::info("libwebsockets") << l;
+      else
+        log::verbose("libwebsockets") << l;
     });
 }
 
