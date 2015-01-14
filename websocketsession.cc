@@ -11,15 +11,15 @@ using namespace std;
 
 void WebSocketSession::initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi)
 {
-  assert(this->context == nullptr);
-  assert(this->wsi == nullptr);
+  assert(this->_context == nullptr);
+  assert(this->_wsi == nullptr);
   assert(this->_handler == nullptr);
   assert(context);
   assert(wsi);
   assert(handler);
 
-  this->context = context;
-  this->wsi = wsi;
+  this->_context = context;
+  this->_wsi = wsi;
   this->_handler = handler;
 
   handler->addSession(this);
@@ -29,8 +29,8 @@ void WebSocketSession::send(vector<byte> buf)
 {
   _txQueue.push(move(buf));
 
-  if (context && wsi)
-    libwebsocket_callback_on_writable(context, wsi);
+  if (_context && _wsi)
+    libwebsocket_callback_on_writable(_context, _wsi);
 }
 
 int WebSocketSession::write()
@@ -39,7 +39,7 @@ int WebSocketSession::write()
   assert(hasDataToWrite());
 
   // Fill the outbound pipe with frames of data
-  while (!lws_send_pipe_choked(wsi) && !_txQueue.empty())
+  while (!lws_send_pipe_choked(_wsi) && !_txQueue.empty())
   {
     vector<byte>& buffer = _txQueue.front();
 
@@ -64,7 +64,7 @@ int WebSocketSession::write()
     if (storePostPadding)
       std::copy(start + frameSize, start + frameSize + LWS_SEND_BUFFER_POST_PADDING, postPadding.data());
 
-    int res = libwebsocket_write(wsi, start, frameSize, (libwebsocket_write_protocol)writeMode);
+    int res = libwebsocket_write(_wsi, start, frameSize, (libwebsocket_write_protocol)writeMode);
 
     if (res < 0)
     {
@@ -86,13 +86,13 @@ int WebSocketSession::write()
     }
 
     // Break loop if last write was buffered
-    if (lws_partial_buffered(wsi))
+    if (lws_partial_buffered(_wsi))
       break;
   }
 
   // Queue for more writing later on if we still have data remaining
   if (!_txQueue.empty())
-    libwebsocket_callback_on_writable(context, wsi);
+    libwebsocket_callback_on_writable(_context, _wsi);
 
   return 0;
 }

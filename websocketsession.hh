@@ -18,8 +18,8 @@ namespace lwsxx
 
   public:
     WebSocketSession()
-      : context(nullptr),
-        wsi(nullptr),
+      : _context(nullptr),
+        _wsi(nullptr),
         _handler(nullptr),
         _rxBufferPos(0),
         _bytesSent(0)
@@ -48,8 +48,8 @@ namespace lwsxx
     bool hasDataToWrite() const { return !_txQueue.empty(); }
 
   private:
-    libwebsocket_context* context;
-    libwebsocket* wsi;
+    libwebsocket_context* _context;
+    libwebsocket* _wsi;
     WebSocketHandler* _handler;
 
     std::vector<byte> _rxBuffer;

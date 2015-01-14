@@ -385,15 +385,15 @@ int WebSockets::callback(
     }
     case LWS_CALLBACK_SERVER_WRITEABLE:
     {
-      assert(context == session->context);
-      assert(wsi == session->wsi);
+      assert(context == session->_context);
+      assert(wsi == session->_wsi);
       return session->write();
     }
     case LWS_CALLBACK_RECEIVE:
     {
       // TODO need to check if final fragment here too, to properly support large messages that span multiple packets
-      assert(context == session->context);
-      assert(wsi == session->wsi);
+      assert(context == session->_context);
+      assert(wsi == session->_wsi);
       session->receive(reinterpret_cast<byte*>(in), len, libwebsockets_remaining_packet_payload(wsi));
       break;
     }
@@ -402,8 +402,8 @@ int WebSockets::callback(
 
     case LWS_CALLBACK_CLOSED:
     {
-      assert(context == session->context);
-      assert(wsi == session->wsi);
+      assert(context == session->_context);
+      assert(wsi == session->_wsi);
       session->_handler->removeSession(session);
       session->onClosed();
       // TODO is this the right thing to do for all sessions (client & server)?
@@ -415,40 +415,40 @@ int WebSockets::callback(
 
     case LWS_CALLBACK_CLIENT_ESTABLISHED:
     {
-      assert(context == session->context);
-      assert(wsi == session->wsi);
+      assert(context == session->_context);
+      assert(wsi == session->_wsi);
       assert(session->_handler != nullptr);
       session->onClientConnected();
       if (session->hasDataToWrite())
-        libwebsocket_callback_on_writable(session->context, session->wsi);
+        libwebsocket_callback_on_writable(session->_context, session->_wsi);
       break;
     }
     case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
     {
       // Unable to complete handshake with remote server
-      assert(context == session->context);
-      assert(wsi == session->wsi);
+      assert(context == session->_context);
+      assert(wsi == session->_wsi);
       session->onClientConnectionError();
       break;
     }
     case LWS_CALLBACK_CLIENT_WRITEABLE:
     {
-      assert(context == session->context);
-      assert(wsi == session->wsi);
+      assert(context == session->_context);
+      assert(wsi == session->_wsi);
       return session->write();
     }
     case LWS_CALLBACK_CLIENT_RECEIVE:
     {
       // TODO need to check if final fragment here too, to properly support large messages that span multiple packets
-      assert(context == session->context);
-      assert(wsi == session->wsi);
+      assert(context == session->_context);
+      assert(wsi == session->_wsi);
       session->receive(reinterpret_cast<byte*>(in), len, libwebsockets_remaining_packet_payload(wsi));
       break;
     }
     case LWS_CALLBACK_CLIENT_CONFIRM_EXTENSION_SUPPORTED:
     {
-      assert(context == session->context);
-      assert(wsi == session->wsi);
+      assert(context == session->_context);
+      assert(wsi == session->_wsi);
       if (strcmp(reinterpret_cast<const char*>(in), "deflate-stream") == 0 ||
           strcmp(reinterpret_cast<const char*>(in), "deflate-frame")  == 0 ||
           strcmp(reinterpret_cast<const char*>(in), "x-google-mux")   == 0)
