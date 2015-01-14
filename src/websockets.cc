@@ -348,6 +348,9 @@ int WebSockets::callback(
           request->_responseBody.data() + request->_responseBodyPos,
           n, LWS_WRITE_HTTP);
 
+        if (m < 0)
+          return 1;
+
         request->_responseBodyPos += m;
 
         // While still active, extend timeout
