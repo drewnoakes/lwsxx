@@ -33,7 +33,7 @@ namespace lwsxx
 
     int write();
 
-    void receive(byte* data, size_t len, size_t remaining);
+    void receive(byte* data, size_t len, bool isFinalFragment, size_t remainingInPacket);
 
     // TODO the following could reasonably be confused as a callback for when clients connect to our server, rather than a callback for when our client connects to another server
     /** Called when the client connects successfully. */

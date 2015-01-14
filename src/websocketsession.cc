@@ -97,16 +97,14 @@ int WebSocketSession::write()
   return 0;
 }
 
-void WebSocketSession::receive(byte* data, size_t len, size_t remaining)
+void WebSocketSession::receive(byte* data, size_t len, bool isFinalFragment, size_t remainingInPacket)
 {
-  if (_rxBuffer.size() == 0)
-    _rxBuffer.resize(len + remaining + 1);
+  _rxBuffer.resize(_rxBuffer.size() + len);
 
   std::copy(data, data + len, _rxBuffer.data() + _rxBufferPos);
 
-  if (remaining == 0)
+  if (remainingInPacket == 0 && isFinalFragment)
   {
-    _rxBuffer[_rxBuffer.size() - 1] = '\0';
     _handler->receiveMessage(_rxBuffer);
     _rxBuffer.clear();
     _rxBufferPos = 0;

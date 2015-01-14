@@ -409,7 +409,18 @@ int WebSockets::callback(
       // TODO need to check if final fragment here too, to properly support large messages that span multiple packets
       assert(context == session->_context);
       assert(wsi == session->_wsi);
-      session->receive(reinterpret_cast<byte*>(in), len, libwebsockets_remaining_packet_payload(wsi));
+      if (len != 0)
+      {
+        session->receive(
+          static_cast<byte*>(in),
+          len,
+          libwebsocket_is_final_fragment(wsi) != 0,
+          libwebsockets_remaining_packet_payload(wsi));
+      }
+      else
+      {
+        log::warning("WebSockets::callback") << "Received a zero-length message";
+      }
       break;
     }
 
@@ -454,10 +465,13 @@ int WebSockets::callback(
     }
     case LWS_CALLBACK_CLIENT_RECEIVE:
     {
-      // TODO need to check if final fragment here too, to properly support large messages that span multiple packets
       assert(context == session->_context);
       assert(wsi == session->_wsi);
-      session->receive(reinterpret_cast<byte*>(in), len, libwebsockets_remaining_packet_payload(wsi));
+      session->receive(
+        static_cast<byte*>(in),
+        len,
+        libwebsocket_is_final_fragment(wsi) != 0,
+        libwebsockets_remaining_packet_payload(wsi));
       break;
     }
     case LWS_CALLBACK_CLIENT_CONFIRM_EXTENSION_SUPPORTED:
