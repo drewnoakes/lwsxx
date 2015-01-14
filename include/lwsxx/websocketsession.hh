@@ -11,7 +11,7 @@ typedef unsigned char byte;
 
 namespace lwsxx
 {
-  /** Dispatches lws events for both clients and servers  */
+  /** Dispatches lws events for both clients and services. For services, there's one instance of this type per connected client. */
   class WebSocketSession final
   {
     friend class WebSockets;
@@ -55,7 +55,9 @@ namespace lwsxx
     std::vector<byte> _rxBuffer;
     size_t _rxBufferPos;
 
+    /// The queue of encoded messages waiting to be sent via the websocket.
     std::queue<std::vector<byte>> _txQueue;
+    /// The number of bytes sent in a previous frame for the bytes at the head of the queue.
     size_t _bytesSent;
   };
 }

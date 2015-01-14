@@ -89,6 +89,7 @@ void WebSockets::start()
     throw runtime_error("Already started");
 
   // LWS requires there to always be at least one protocol
+  // HTTP always goes through the first in the array
   _protocols.push_back({
     "",                         // name
     callback,                   // callback
