@@ -1,4 +1,4 @@
-#include "websockets.hh"
+#include <lwsxx/websockets.hh>
 
 #include <iostream>
 #include <queue>
@@ -6,8 +6,8 @@
 #include <camshaft/log.hh>
 #include <camshaft/memory.hh>
 
-#include "websockethandler.hh"
-#include "websocketsession.hh"
+#include <lwsxx/websockethandler.hh>
+#include <lwsxx/websocketsession.hh>
 
 using namespace lwsxx;
 using namespace std;

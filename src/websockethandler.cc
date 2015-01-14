@@ -1,8 +1,6 @@
-#include "websockethandler.hh"
+#include <lwsxx/websockethandler.hh>
 
-#include "websocketsession.hh"
-
-#include <algorithm>
+#include <lwsxx/websocketsession.hh>
 
 using namespace lwsxx;
 using namespace std;

@@ -1,4 +1,4 @@
-#include "websocketbuffer.hh"
+#include <lwsxx/websocketbuffer.hh>
 
 #include <libwebsockets.h>
 
