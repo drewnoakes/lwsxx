@@ -21,7 +21,11 @@ namespace lwsxx
     /** Called when a complete message has been received for processing. */
     virtual void receiveMessage(std::vector<byte>& message) = 0;
 
+    /** Send the specified buffer to all connected clients. */
     void send(WebSocketBuffer& buffer);
+
+    /** Send the specified buffer to the specified client. */
+    void send(WebSocketBuffer& buffer, WebSocketSession* session);
 
     bool hasSession() const { return !_sessions.empty(); }
 
