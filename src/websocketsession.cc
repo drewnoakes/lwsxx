@@ -105,7 +105,7 @@ void WebSocketSession::receive(byte* data, size_t len, bool isFinalFragment, siz
 
   if (remainingInPacket == 0 && isFinalFragment)
   {
-    _handler->receiveMessage(_rxBuffer);
+    _handler->receiveMessage(this, _rxBuffer);
     _rxBuffer.clear();
     _rxBufferPos = 0;
   }

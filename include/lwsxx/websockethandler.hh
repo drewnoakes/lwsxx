@@ -18,9 +18,6 @@ namespace lwsxx
     friend class WebSockets;
 
   public:
-    /** Called when a complete message has been received for processing. */
-    virtual void receiveMessage(std::vector<byte>& message) = 0;
-
     /** Send the specified buffer to all connected clients. */
     void send(WebSocketBuffer& buffer);
 
@@ -32,6 +29,9 @@ namespace lwsxx
   protected:
     /** Specifies whether this handler should be associated to an inbound connection. */
     virtual bool canProcess(std::string protocolName) const = 0;
+
+    /** Called when a complete message has been received for processing. */
+    virtual void receiveMessage(WebSocketSession* session, std::vector<byte>& message) = 0;
 
     virtual void onSessionAdded(WebSocketSession*) {}
     virtual void onSessionRemoved(WebSocketSession*) {}
