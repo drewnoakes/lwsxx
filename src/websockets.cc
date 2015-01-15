@@ -490,11 +490,11 @@ int WebSockets::callback(
     {
       assert(context == session->_context);
       assert(wsi == session->_wsi);
-      if (strcmp(reinterpret_cast<const char*>(in), "deflate-stream") == 0 ||
-          strcmp(reinterpret_cast<const char*>(in), "deflate-frame")  == 0 ||
-          strcmp(reinterpret_cast<const char*>(in), "x-google-mux")   == 0)
+      if (strcmp(static_cast<const char*>(in), "deflate-stream") == 0 ||
+          strcmp(static_cast<const char*>(in), "deflate-frame")  == 0 ||
+          strcmp(static_cast<const char*>(in), "x-google-mux")   == 0)
       {
-        log::info("WebSockets::callback") << "Denied extension: " << reinterpret_cast<const char*>(in);
+        log::info("WebSockets::callback") << "Denied extension: " << static_cast<const char*>(in);
         return 1;
       }
       break;
