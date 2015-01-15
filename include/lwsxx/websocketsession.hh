@@ -22,11 +22,16 @@ namespace lwsxx
         _wsi(nullptr),
         _handler(nullptr),
         _rxBufferPos(0),
-        _bytesSent(0)
+        _bytesSent(0),
+        _hostName(),
+        _ipAddress()
     {}
 
+    const std::string& getHostName() const { return _hostName; }
+    const std::string& getIpAddress() const { return _ipAddress; }
+    int getClientSessionId() const { return _clientSessionId; }
 
-    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi);
+    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, int clientSessionId);
 
     void send(std::vector<byte> buf);
 
@@ -58,5 +63,9 @@ namespace lwsxx
     std::queue<std::vector<byte>> _txQueue;
     /// The number of bytes sent in a previous frame for the bytes at the head of the queue.
     size_t _bytesSent;
+
+    std::string _hostName;
+    std::string _ipAddress;
+    int _clientSessionId;
   };
 }

@@ -14,6 +14,8 @@ using namespace std;
 
 typedef unsigned char byte;
 
+static unsigned long clientSessionId = 0;
+
 WebSockets::WebSockets(int port)
   : _port(port),
     _context(nullptr)
@@ -165,7 +167,7 @@ void WebSockets::start()
       throw runtime_error("WebSocket client connect failed");
     }
 
-    session->initialise(client.handler, _context, wsi);
+    session->initialise(client.handler, _context, wsi, "", "", -1);
 
     log::info("WebSockets::start") << "Client connected: " << client.address << ':' << client.port << client.path;
   }
@@ -382,7 +384,13 @@ int WebSockets::callback(
       {
         if (service.handler->canProcess(protocolName))
         {
-          session->initialise(service.handler, context, wsi);
+          char hostName[256];
+          char ipAddress[32];
+
+          int fd = libwebsocket_get_socket_fd(wsi);
+          libwebsockets_get_peer_addresses(context, wsi, fd, hostName, sizeof(hostName), ipAddress, sizeof(ipAddress));
+
+          session->initialise(service.handler, context, wsi, hostName, ipAddress, clientSessionId++);
           found = true;
           break;
         }
