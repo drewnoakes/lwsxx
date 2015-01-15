@@ -30,7 +30,8 @@ namespace lwsxx
     bool hasSession() const { return !_sessions.empty(); }
 
   protected:
-    virtual bool canProcess(std::string protocolName) const { (void)protocolName; return false; };
+    /** Specifies whether this handler should be associated to an inbound connection. */
+    virtual bool canProcess(std::string protocolName) const = 0;
 
     virtual void onSessionAdded(WebSocketSession*) {}
     virtual void onSessionRemoved(WebSocketSession*) {}
