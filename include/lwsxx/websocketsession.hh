@@ -19,16 +19,6 @@ namespace lwsxx
     friend class WebSocketHandler;
 
   public:
-    WebSocketSession()
-      : _context(nullptr),
-        _wsi(nullptr),
-        _handler(nullptr),
-        _rxBufferPos(0),
-        _bytesSent(0),
-        _hostName(),
-        _ipAddress()
-    {}
-
     const std::string& getHostName() const { return _hostName; }
     const std::string& getIpAddress() const { return _ipAddress; }
     int getClientSessionId() const { return _clientSessionId; }
@@ -45,6 +35,16 @@ namespace lwsxx
     }
 
   private:
+    WebSocketSession()
+      : _context(nullptr),
+        _wsi(nullptr),
+        _handler(nullptr),
+        _rxBufferPos(0),
+        _bytesSent(0),
+        _hostName(),
+        _ipAddress()
+    {}
+
     void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, int clientSessionId);
 
     void send(std::vector<byte> buf);
