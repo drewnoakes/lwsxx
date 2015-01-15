@@ -21,9 +21,6 @@ namespace lwsxx
     /** Send the specified buffer to all connected clients. */
     void send(WebSocketBuffer& buffer);
 
-    /** Send the specified buffer to the specified client. */
-    void send(WebSocketBuffer& buffer, WebSocketSession* session);
-
     bool hasSession() const { return !_sessions.empty(); }
 
   protected:

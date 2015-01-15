@@ -32,6 +32,17 @@ namespace lwsxx
     const std::string& getIpAddress() const { return _ipAddress; }
     int getClientSessionId() const { return _clientSessionId; }
 
+    /** Enqueue buffer for sending to the client associated with this session. */
+    void send(WebSocketBuffer& buffer)
+    {
+      // Return if there is no data to actually send
+      if (buffer.empty())
+        return;
+
+      auto bytes = buffer.flush();
+      send(move(bytes));
+    }
+
   private:
     void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, int clientSessionId);
 

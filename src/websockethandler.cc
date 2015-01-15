@@ -35,13 +35,3 @@ void WebSocketHandler::send(WebSocketBuffer& buffer)
       session->send(bytes);
   }
 }
-
-void WebSocketHandler::send(WebSocketBuffer& buffer, WebSocketSession* session)
-{
-  // Return if there is no data to actually send
-  if (buffer.empty())
-    return;
-
-  auto bytes = buffer.flush();
-  session->send(move(bytes));
-}
