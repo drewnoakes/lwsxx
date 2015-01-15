@@ -310,7 +310,7 @@ int WebSockets::callback(
         unsigned char* p = buffer + LWS_SEND_BUFFER_PRE_PADDING;
         unsigned char* end = p + sizeof(buffer) - LWS_SEND_BUFFER_PRE_PADDING;
 
-        if (lws_add_http_header_status(context, wsi, request->_responseCode, &p, end))
+        if (lws_add_http_header_status(context, wsi, (unsigned)request->_responseCode, &p, end))
           return 1;
 
         if (lws_add_http_header_by_token(context, wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
@@ -524,7 +524,7 @@ HttpRequest::HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_
   _headersSent(false),
   _responseBody(),
   _responseBodyPos(LWS_SEND_BUFFER_PRE_PADDING),
-  _responseCode(-1),
+  _responseCode(HttpStatus::Unknown),
   _responseContentType()
 {}
 
@@ -536,7 +536,7 @@ void HttpRequest::appendBodyChunk(byte* data, size_t len)
   _bodyDataPos += len;
 }
 
-void HttpRequest::respond(short responseCode, std::string contentType, WebSocketBuffer responseBody)
+void HttpRequest::respond(HttpStatus responseCode, std::string contentType, WebSocketBuffer responseBody)
 {
   // Send headers
 

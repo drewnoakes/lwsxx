@@ -43,6 +43,17 @@ namespace lwsxx
 
   class WebSockets;
 
+  enum class HttpStatus : short
+  {
+    Unknown = -1,
+
+    Success = 200,
+
+    BadRequest = 400,
+    Forbidden = 403,
+    NotFound = 404
+  };
+
   class HttpRequest
   {
   public:
@@ -53,7 +64,7 @@ namespace lwsxx
     HttpMethod method() const { return _method; }
     std::vector<byte> const& bodyData() const { return _bodyData; }
 
-    void respond(short responseCode, std::string contentType, WebSocketBuffer responseBody);
+    void respond(HttpStatus responseCode, std::string contentType, WebSocketBuffer responseBody);
 
   private:
     friend class WebSockets;
@@ -74,7 +85,7 @@ namespace lwsxx
     bool _headersSent;
     std::vector<byte> _responseBody;
     size_t _responseBodyPos;
-    short _responseCode;
+    HttpStatus _responseCode;
     std::string _responseContentType;
   };
 
