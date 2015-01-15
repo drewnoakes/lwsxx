@@ -25,8 +25,8 @@ namespace lwsxx
     bool hasSession() const { return !_sessions.empty(); }
 
   protected:
-    /** Specifies whether this handler should be associated to an inbound connection. */
-    virtual bool canProcess(std::string protocolName) const = 0;
+    /** Specifies whether this handler should be associated to an inbound connection. Applies to services only, not clients. */
+    virtual bool canProcess(std::string protocolName) const { (void)protocolName; return false; };
 
     /** Called when a complete message has been received for processing. */
     virtual void receiveMessage(WebSocketSession* session, std::vector<byte>& message) = 0;
