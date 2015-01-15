@@ -25,7 +25,6 @@ namespace lwsxx
         _bytesSent(0)
     {}
 
-    ~WebSocketSession() = default;
 
     void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi);
 
