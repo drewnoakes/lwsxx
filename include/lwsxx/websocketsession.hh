@@ -15,6 +15,7 @@ namespace lwsxx
   class WebSocketSession final
   {
     friend class WebSockets;
+    friend class WebSocketHandler;
 
   public:
     WebSocketSession()
@@ -31,6 +32,7 @@ namespace lwsxx
     const std::string& getIpAddress() const { return _ipAddress; }
     int getClientSessionId() const { return _clientSessionId; }
 
+  private:
     void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, int clientSessionId);
 
     void send(std::vector<byte> buf);
@@ -51,7 +53,6 @@ namespace lwsxx
 
     bool hasDataToWrite() const { return !_txQueue.empty(); }
 
-  private:
     libwebsocket_context* _context;
     libwebsocket* _wsi;
     WebSocketHandler* _handler;
