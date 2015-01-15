@@ -6,6 +6,7 @@
 #include <rapidjson/stringbuffer.h>
 #include <iostream>
 #include <queue>
+#include <mutex>
 
 typedef unsigned char byte;
 
@@ -75,6 +76,7 @@ namespace lwsxx
     std::queue<std::vector<byte>> _txQueue;
     /// The number of bytes sent in a previous frame for the bytes at the head of the queue.
     size_t _bytesSent;
+    std::mutex _txMutex;
 
     std::string _hostName;
     std::string _ipAddress;

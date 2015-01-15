@@ -30,6 +30,8 @@ void WebSocketSession::initialise(WebSocketHandler* handler, libwebsocket_contex
 
 void WebSocketSession::send(vector<byte> buf)
 {
+  lock_guard<mutex> guard(_txMutex);
+
   _txQueue.push(move(buf));
 
   if (_context && _wsi)
@@ -38,6 +40,8 @@ void WebSocketSession::send(vector<byte> buf)
 
 int WebSocketSession::write()
 {
+  lock_guard<mutex> guard(_txMutex);
+
   assert(_handler);
   assert(hasDataToWrite());
 
