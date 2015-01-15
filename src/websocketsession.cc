@@ -32,6 +32,10 @@ void WebSocketSession::send(vector<byte> buf)
 {
   lock_guard<mutex> guard(_txMutex);
 
+  // Give the handler a chance to adjust the queue, or to reject the send
+  if (!_handler->onBeforeSend(this, _txQueue))
+    return;
+
   _txQueue.push(move(buf));
 
   if (_context && _wsi)
