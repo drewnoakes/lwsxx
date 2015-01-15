@@ -32,8 +32,8 @@ WebSockets::WebSockets(int port)
     levelMask |= LLL_WARN;
   if (log::minLevel <= LogLevel::Info)
     levelMask |= LLL_NOTICE;
-  if (log::minLevel <= LogLevel::Verbose)
-    levelMask |= LLL_INFO | LLL_DEBUG;
+//  if (log::minLevel <= LogLevel::Trace)
+//    levelMask |= LLL_INFO;
 
   lws_set_log_level(
     levelMask,
