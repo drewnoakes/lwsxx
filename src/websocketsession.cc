@@ -43,7 +43,6 @@ int WebSocketSession::write()
   lock_guard<mutex> guard(_txMutex);
 
   assert(_handler);
-  assert(hasDataToWrite());
 
   // Fill the outbound pipe with frames of data
   while (!lws_send_pipe_choked(_wsi) && !_txQueue.empty())
