@@ -80,4 +80,10 @@ namespace lwsxx
     std::string _ipAddress;
     int _clientSessionId;
   };
+
+  inline std::ostream& operator<<(std::ostream& stream, const WebSocketSession& client)
+  {
+    stream << client.getClientSessionId() << ' ' << client.getHostName() << '@' << client.getIpAddress();
+    return stream;
+  }
 }

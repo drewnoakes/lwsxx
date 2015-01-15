@@ -406,7 +406,7 @@ int WebSockets::callback(
     }
     case LWS_CALLBACK_ESTABLISHED:
     {
-      log::info("WebSockets::callback") << "LWS callback established";
+      log::info("WebSockets::callback") << "LWS callback established for client: " << *session;
       break;
     }
     case LWS_CALLBACK_SERVER_WRITEABLE:
