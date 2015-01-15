@@ -62,7 +62,7 @@ namespace lwsxx
     std::string url() const { return _url; }
     size_t contentLength() const { return _contentLength; }
     HttpMethod method() const { return _method; }
-    std::vector<byte> const& bodyData() const { return _bodyData; }
+    std::vector<byte>& bodyData() { return _bodyData; }
 
     void respond(HttpStatus responseCode, std::string contentType, WebSocketBuffer responseBody);
 
