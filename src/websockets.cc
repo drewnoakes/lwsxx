@@ -185,10 +185,12 @@ string getHeader(libwebsocket* wsi, lws_token_indexes h)
 {
   int len = lws_hdr_total_length(wsi, h) + 1;
 
-  if (len == 1)
+  const int MaxHeaderLength = 4096;
+
+  if (len == 1 || len >= MaxHeaderLength)
     return "";
 
-  char buf[len];
+  char buf[MaxHeaderLength];
   int bytesCopied = lws_hdr_copy(wsi, buf, len, h);
 
   assert(bytesCopied + 1 == len);
