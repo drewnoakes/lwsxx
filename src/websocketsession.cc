@@ -9,7 +9,7 @@ static const unsigned long WEBSOCKET_WRITE_BUFFER_LENGTH = 2048ul;
 using namespace lwsxx;
 using namespace std;
 
-void WebSocketSession::initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, string hostName, string ipAddress, int clientSessionId)
+void WebSocketSession::initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, string hostName, string ipAddress, unsigned long clientSessionId)
 {
   assert(this->_context == nullptr);
   assert(this->_wsi == nullptr);

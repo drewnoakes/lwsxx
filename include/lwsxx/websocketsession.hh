@@ -21,7 +21,7 @@ namespace lwsxx
   public:
     const std::string& getHostName() const { return _hostName; }
     const std::string& getIpAddress() const { return _ipAddress; }
-    int getClientSessionId() const { return _clientSessionId; }
+    unsigned long getClientSessionId() const { return _clientSessionId; }
 
     /** Enqueue buffer for sending to the client associated with this session. */
     void send(WebSocketBuffer& buffer)
@@ -45,7 +45,7 @@ namespace lwsxx
         _ipAddress()
     {}
 
-    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, int clientSessionId);
+    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long clientSessionId);
 
     void send(std::vector<byte> buf);
 
@@ -80,7 +80,7 @@ namespace lwsxx
 
     std::string _hostName;
     std::string _ipAddress;
-    int _clientSessionId;
+    unsigned long _clientSessionId;
   };
 
   inline std::ostream& operator<<(std::ostream& stream, const WebSocketSession& client)
