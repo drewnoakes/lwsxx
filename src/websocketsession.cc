@@ -116,7 +116,14 @@ void WebSocketSession::receive(byte* data, size_t len, bool isFinalFragment, siz
 
   if (remainingInPacket == 0 && isFinalFragment)
   {
-    _handler->receiveMessage(this, _rxBuffer);
+    try
+    {
+      _handler->receiveMessage(this, _rxBuffer);
+    }
+    catch(exception& ex)
+    {
+      log::error("WebSocketSession::receive") << "Exception thrown by WebSocketHandler::receiveMessage: " << ex.what();
+    }
     _rxBuffer.clear();
     _rxBufferPos = 0;
   }
