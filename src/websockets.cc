@@ -177,8 +177,13 @@ void WebSockets::service(unsigned int timeoutMillis)
 {
   assert(_context != nullptr);
 
-  if (libwebsocket_service(_context, timeoutMillis) < 0)
+  int res = libwebsocket_service(_context, timeoutMillis);
+
+  if (res < 0)
+  {
+    log::error("WebSockets::service") << "libwebsocket_service returned error code: " << res;
     throw runtime_error("libwebsocket_service returned an error code"); // TODO provide details of error
+  }
 }
 
 string getHeader(libwebsocket* wsi, lws_token_indexes h)
