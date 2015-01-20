@@ -389,7 +389,7 @@ int WebSockets::callback(
       // A new client has connected to our service
       new (session) WebSocketSession();
 
-      string protocolName = string(static_cast<char*>(in));
+      string protocolName = in ? string(static_cast<char*>(in)) : "";
 
       bool found = false;
       for (auto& service : webSockets->_serviceHandlers)
