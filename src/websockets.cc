@@ -9,6 +9,10 @@
 #include <lwsxx/websockethandler.hh>
 #include <lwsxx/websocketsession.hh>
 
+// TODO break lwsxx dependency upon camshaft/rapidjson
+#include <camshaft/lwsxx/websocketjsonbuffer.hh>
+#include <rapidjson/writer.h>
+
 using namespace lwsxx;
 using namespace std;
 
@@ -552,4 +556,25 @@ void HttpRequest::respond(HttpStatus responseCode, std::string contentType, WebS
   _responseBody = move(responseBody.flush(false));
 
   libwebsocket_callback_on_writable(_context, _wsi);
+}
+
+void HttpRequest::invokeCallback()
+{
+  assert(_bodyDataPos == _contentLength);
+
+  try
+  {
+    _callback(*this);
+  }
+  catch (http_exception& ex)
+  {
+    camshaft::WebSocketJsonBuffer buffer;
+    rapidjson::Writer<camshaft::WebSocketJsonBuffer> writer(buffer);
+    writer.StartObject();
+    writer.String("error");
+    writer.String(ex.what());
+    writer.EndObject();
+
+    respond(ex.httpStatus(), "application/json", buffer);
+  }
 }

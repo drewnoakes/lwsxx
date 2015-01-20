@@ -54,6 +54,39 @@ namespace lwsxx
     NotFound = 404
   };
 
+  class http_exception : public std::exception
+  {
+  public:
+    http_exception(HttpStatus status, std::string what)
+      : _status(status),
+        _what(what)
+    {}
+
+    HttpStatus httpStatus() const noexcept { return _status; }
+
+    const char* what() const noexcept override { return _what.c_str(); }
+
+  private:
+    HttpStatus _status;
+    std::string _what;
+  };
+
+  class not_found_exception : public http_exception
+  {
+  public:
+    not_found_exception(std::string what)
+      : http_exception(HttpStatus::NotFound, what)
+    {}
+  };
+
+  class bad_request_exception : public http_exception
+  {
+  public:
+    bad_request_exception(std::string what)
+      : http_exception(HttpStatus::BadRequest, what)
+    {}
+  };
+
   class HttpRequest
   {
   public:
@@ -69,7 +102,7 @@ namespace lwsxx
   private:
     friend class WebSockets;
 
-    void invokeCallback() { assert(_bodyDataPos == _contentLength); _callback(*this); }
+    void invokeCallback();
     void appendBodyChunk(byte* data, size_t len);
 
     libwebsocket_context* _context;
