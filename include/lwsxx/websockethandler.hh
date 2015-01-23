@@ -24,6 +24,8 @@ namespace lwsxx
 
     bool hasSession() const { return !_sessions.empty(); }
 
+    virtual std::string getName() const = 0;
+
   protected:
     /** Specifies whether this handler should be associated to an inbound connection. Applies to services only, not clients. */
     virtual bool canProcess(std::string protocolName) const { (void)protocolName; return false; };

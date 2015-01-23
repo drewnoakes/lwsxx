@@ -146,5 +146,5 @@ void WebSocketSession::onClosed()
 
 void WebSocketSession::onClientConnectionError()
 {
-  log::error("WebSocketSession::onClientConnectionError") << "Client connection error";
+  log::error("WebSocketSession::onClientConnectionError") << "Client connection error for " << _handler->getName();
 }
