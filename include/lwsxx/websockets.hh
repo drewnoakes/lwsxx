@@ -90,9 +90,10 @@ namespace lwsxx
   class HttpRequest
   {
   public:
-    HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_t contentLength, std::string url, HttpMethod method, std::function<void(HttpRequest&)>& callback);
+    HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_t contentLength, std::string url, std::string queryString, HttpMethod method, std::function<void(HttpRequest&)>& callback);
 
     std::string url() const { return _url; }
+    std::string queryString() const { return _queryString; }
     size_t contentLength() const { return _contentLength; }
     HttpMethod method() const { return _method; }
     std::vector<byte>& bodyData() { return _bodyData; }
@@ -110,6 +111,7 @@ namespace lwsxx
 
     size_t _contentLength;
     std::string _url;
+    std::string _queryString;
     HttpMethod _method;
     std::function<void(HttpRequest&)>& _callback;
     std::vector<byte> _bodyData;

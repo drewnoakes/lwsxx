@@ -264,7 +264,12 @@ int WebSockets::callback(
       HttpMethod method = isGet ? HttpMethod::GET : HttpMethod::POST;
       string url(static_cast<const char*>(in), len);
 
-      log::info("WebSockets::callback") << "Processing HTTP " << (method == HttpMethod::GET ? "GET" : "POST") << " request for URL: " << url;
+      string queryString = getHeader(wsi, WSI_TOKEN_HTTP_URI_ARGS);
+
+      log::info("WebSockets::callback")
+        << "Processing HTTP " << (method == HttpMethod::GET ? "GET" : "POST")
+        << " request for URL: " << url
+        << (queryString.empty() ? "" : "?" + queryString);
 
       HttpRouteDetails* matchingHandler = nullptr;
 
@@ -284,7 +289,7 @@ int WebSockets::callback(
         return 1;
       }
 
-      new (request) HttpRequest(context, wsi, contentLength, url, method, matchingHandler->callback);
+      new (request) HttpRequest(context, wsi, contentLength, url, queryString, method, matchingHandler->callback);
 
       break;
     }
@@ -523,11 +528,12 @@ void WebSockets::addHttpRoute(HttpMethod method, regex urlPattern, std::function
   _httpRoutes.emplace_back(method, urlPattern, callback);
 }
 
-HttpRequest::HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_t contentLength, string url, HttpMethod method, function<void(HttpRequest&)>& callback)
+HttpRequest::HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_t contentLength, string url, string queryString, HttpMethod method, function<void(HttpRequest&)>& callback)
 : _context(context),
   _wsi(wsi),
   _contentLength(contentLength),
   _url(url),
+  _queryString(queryString),
   _method(method),
   _callback(callback),
   _bodyData(contentLength),
