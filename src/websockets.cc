@@ -171,7 +171,7 @@ void WebSockets::start()
       throw runtime_error("WebSocket client connect failed");
     }
 
-    session->initialise(client.handler, _context, wsi, "", "", -1);
+    session->initialise(client.handler, _context, wsi, "", "", 0);
 
     log::info("WebSockets::start") << "Client connected: " << client.address << ':' << client.port << client.path;
   }
@@ -181,7 +181,7 @@ void WebSockets::service(unsigned int timeoutMillis)
 {
   assert(_context != nullptr);
 
-  int res = libwebsocket_service(_context, timeoutMillis);
+  int res = libwebsocket_service(_context, (int)timeoutMillis);
 
   if (res < 0)
   {
@@ -205,7 +205,7 @@ string getHeader(libwebsocket* wsi, lws_token_indexes h)
   assert(bytesCopied + 1 == len);
   assert(buf[len - 1] == '\0');
 
-  return string(buf, len);
+  return string(buf, (size_t)len);
 }
 
 int getHeaderInt(libwebsocket* wsi, lws_token_indexes h, int defaultValue)
@@ -340,7 +340,7 @@ int WebSockets::callback(
 
         int n = libwebsocket_write(wsi,
           buffer + LWS_SEND_BUFFER_PRE_PADDING,
-          p - (buffer + LWS_SEND_BUFFER_PRE_PADDING),
+          (size_t)(p - (buffer + LWS_SEND_BUFFER_PRE_PADDING)),
           LWS_WRITE_HTTP_HEADERS);
 
         if (n < 0)
@@ -365,7 +365,7 @@ int WebSockets::callback(
         if (m < 0)
           return 1;
 
-        request->_responseBodyPos += m;
+        request->_responseBodyPos += (size_t)m;
 
         // While still active, extend timeout
         if (m != 0)
