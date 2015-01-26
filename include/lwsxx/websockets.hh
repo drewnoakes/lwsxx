@@ -51,7 +51,9 @@ namespace lwsxx
 
     BadRequest = 400,
     Forbidden = 403,
-    NotFound = 404
+    NotFound = 404,
+
+    InternalError = 500
   };
 
   class http_exception : public std::exception
