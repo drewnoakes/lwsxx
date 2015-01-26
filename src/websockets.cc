@@ -543,7 +543,10 @@ HttpRequest::HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_
   _responseBodyPos(LWS_SEND_BUFFER_PRE_PADDING),
   _responseCode(HttpStatus::Unknown),
   _responseContentType()
-{}
+{
+  assert(context != nullptr);
+  assert(wsi != nullptr);
+}
 
 void HttpRequest::appendBodyChunk(byte* data, size_t len)
 {
