@@ -205,7 +205,7 @@ string getHeader(libwebsocket* wsi, lws_token_indexes h)
   assert(bytesCopied + 1 == len);
   assert(buf[len - 1] == '\0');
 
-  return string(buf, (size_t)len);
+  return string(buf, (size_t)(len - 1));
 }
 
 int getHeaderInt(libwebsocket* wsi, lws_token_indexes h, int defaultValue)
