@@ -455,7 +455,7 @@ int WebSockets::callback(
       break;
     }
 
-    ////// COMMON
+    ////// COMMON TO WEBSOCKET CLIENT AND SERVER
 
     case LWS_CALLBACK_CLOSED:
     {
