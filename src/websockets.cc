@@ -103,6 +103,7 @@ void WebSockets::start()
         sizeof(HttpRequest)),   // per session data size
     4096,                       // rx buffer size
     0,                          // protocol id
+    nullptr,                    // per-protocol user data
     nullptr, 0                  // unused
   });
 
@@ -115,6 +116,7 @@ void WebSockets::start()
       sizeof(WebSocketSession), // per session data size
       4096,                     // rx buffer size
       0,                        // protocol id
+      nullptr,                  // per-protocol user data
       nullptr, 0                // unused
     });
   }
@@ -128,12 +130,13 @@ void WebSockets::start()
       sizeof(WebSocketSession), // per session data size
       4096,                     // rx buffer size
       0,                        // protocol id
+      nullptr,                  // per-protocol user data
       nullptr, 0                // unused
     });
   }
 
   // Push the sentinel
-  _protocols.push_back({ nullptr, nullptr, 0, 0, 0, nullptr, 0 });
+  _protocols.push_back({ nullptr, nullptr, 0, 0, 0, nullptr, nullptr, 0 });
 
   // Create the LWS context
   lws_context_creation_info info;
