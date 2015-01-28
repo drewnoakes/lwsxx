@@ -446,7 +446,6 @@ int WebSockets::callback(
     }
     case LWS_CALLBACK_RECEIVE:
     {
-      // TODO need to check if final fragment here too, to properly support large messages that span multiple packets
       assert(context == session->_context);
       assert(wsi == session->_wsi);
       if (len != 0)
