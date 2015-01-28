@@ -92,7 +92,7 @@ namespace lwsxx
   class HttpRequest
   {
   public:
-    HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_t contentLength, std::string url, std::string queryString, HttpMethod method, std::function<void(HttpRequest&)>& callback);
+    HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_t contentLength, std::string url, std::string queryString, HttpMethod method, std::function<void(std::shared_ptr<HttpRequest>)>& callback);
 
     std::string url() const { return _url; }
     std::string queryString() const { return _queryString; }
@@ -105,7 +105,10 @@ namespace lwsxx
   private:
     friend class WebSockets;
 
-    void invokeCallback();
+    /// Indicates that the request has been aborted and writing of a response must not occur
+    void abort() { _isAborted = true; }
+
+    void invokeCallback(std::shared_ptr<HttpRequest> request);
     void appendBodyChunk(byte* data, size_t len);
 
     libwebsocket_context* _context;
@@ -115,7 +118,7 @@ namespace lwsxx
     std::string _url;
     std::string _queryString;
     HttpMethod _method;
-    std::function<void(HttpRequest&)>& _callback;
+    std::function<void(std::shared_ptr<HttpRequest>)>& _callback;
     std::vector<byte> _bodyData;
     size_t _bodyDataPos;
 
@@ -124,17 +127,18 @@ namespace lwsxx
     size_t _responseBodyPos;
     HttpStatus _responseCode;
     std::string _responseContentType;
+    bool _isAborted;
   };
 
   struct HttpRouteDetails
   {
-    HttpRouteDetails(HttpMethod method, std::regex urlPattern, std::function<void(HttpRequest&)> callback)
+    HttpRouteDetails(HttpMethod method, std::regex urlPattern, std::function<void(std::shared_ptr<HttpRequest>)> callback)
       : method(method), urlPattern(urlPattern), callback(callback)
     {}
 
     HttpMethod method;
     std::regex urlPattern;
-    std::function<void(HttpRequest&)> callback;
+    std::function<void(std::shared_ptr<HttpRequest>)> callback;
   };
 
   class WebSockets
@@ -165,7 +169,7 @@ namespace lwsxx
     void addHttpRoute(
       HttpMethod method,
       std::regex urlPattern,
-      std::function<void(HttpRequest&)> callback);
+      std::function<void(std::shared_ptr<HttpRequest>)> callback);
 
   private:
     static int callback(libwebsocket_context*, libwebsocket*, libwebsocket_callback_reasons reason, void*, void*, size_t);

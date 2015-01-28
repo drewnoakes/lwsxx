@@ -100,7 +100,8 @@ void WebSockets::start()
     "",                         // name
     callback,                   // callback
     max(sizeof(WebSocketSession),
-        sizeof(HttpRequest)),   // per session data size
+        sizeof(shared_ptr<HttpRequest>)),
+                                // per session data size
     4096,                       // rx buffer size
     0,                          // protocol id
     nullptr,                    // per-protocol user data
@@ -240,9 +241,10 @@ int WebSockets::callback(
   if (user == nullptr)
     return 0;
 
-  WebSockets* webSockets = static_cast<WebSockets*>(libwebsocket_context_user(context));
-  WebSocketSession* session = static_cast<WebSocketSession*>(user);
-  HttpRequest* request = static_cast<HttpRequest*>(user);
+  auto webSockets = static_cast<WebSockets*>(libwebsocket_context_user(context));
+
+  auto session = static_cast<WebSocketSession*>(user);
+  auto request = static_cast<shared_ptr<HttpRequest>*>(user);
 
   switch (reason)
   {
@@ -292,54 +294,55 @@ int WebSockets::callback(
         return 1;
       }
 
-      new (request) HttpRequest(context, wsi, contentLength, url, queryString, method, matchingHandler->callback);
+      auto req = new HttpRequest(context, wsi, contentLength, url, queryString, method, matchingHandler->callback);
+      new (request) shared_ptr<HttpRequest>(req);
 
       break;
     }
     case LWS_CALLBACK_HTTP:
     {
       // 'in' here contains the URL
-      if (request->contentLength() == 0)
+      if ((*request)->contentLength() == 0)
       {
         // No body expected, so invoke callback immediately
-        request->invokeCallback();
+        (*request)->invokeCallback(*request);
       }
       break;
     }
     case LWS_CALLBACK_HTTP_BODY:
     {
       // 'in' here contains body data (possibly chunked)
-      assert(request->contentLength() != 0);
+      assert((*request)->contentLength() != 0);
       assert(len != 0);
       assert(in != nullptr);
-      request->appendBodyChunk(static_cast<byte*>(in), len);
+      (*request)->appendBodyChunk(static_cast<byte*>(in), len);
       break;
     }
     case LWS_CALLBACK_HTTP_BODY_COMPLETION:
     {
-      assert(request->contentLength() != 0);
-      request->invokeCallback();
+      assert((*request)->contentLength() != 0);
+      (*request)->invokeCallback(*request);
       break;
     }
     case LWS_CALLBACK_HTTP_WRITEABLE:
     {
-      if (!request->_headersSent)
+      if (!(*request)->_headersSent)
       {
         unsigned char buffer[4096];
         unsigned char* p = buffer + LWS_SEND_BUFFER_PRE_PADDING;
         unsigned char* end = p + sizeof(buffer) - LWS_SEND_BUFFER_PRE_PADDING;
 
-        if (lws_add_http_header_status(context, wsi, (unsigned)request->_responseCode, &p, end))
+        if (lws_add_http_header_status(context, wsi, (unsigned)(*request)->_responseCode, &p, end))
           return 1;
 
         if (lws_add_http_header_by_token(context, wsi, WSI_TOKEN_HTTP_CONTENT_TYPE,
-          reinterpret_cast<const unsigned char*>(request->_responseContentType.data()),
-          static_cast<int>(request->_responseContentType.size()),
+          reinterpret_cast<const unsigned char*>((*request)->_responseContentType.data()),
+          static_cast<int>((*request)->_responseContentType.size()),
           &p, end))
           return 1;
 
         if (lws_add_http_header_content_length(context, wsi,
-          request->_responseBody.size() - LWS_SEND_BUFFER_PRE_PADDING,
+          (*request)->_responseBody.size() - LWS_SEND_BUFFER_PRE_PADDING,
           &p, end))
           return 1;
 
@@ -354,32 +357,32 @@ int WebSockets::callback(
         if (n < 0)
           return 1;
 
-        request->_headersSent = true;
+        (*request)->_headersSent = true;
 
         libwebsocket_callback_on_writable(context, wsi);
         return 0;
       }
 
-      unsigned long remaining = request->_responseBody.size() - request->_responseBodyPos;
+      unsigned long remaining = (*request)->_responseBody.size() - (*request)->_responseBodyPos;
 
       while (remaining != 0 && !lws_send_pipe_choked(wsi) && !lws_partial_buffered(wsi))
       {
         size_t n = std::min(4096ul, remaining);
 
         int m = libwebsocket_write(wsi,
-          request->_responseBody.data() + request->_responseBodyPos,
+          (*request)->_responseBody.data() + (*request)->_responseBodyPos,
           n, LWS_WRITE_HTTP);
 
         if (m < 0)
           return 1;
 
-        request->_responseBodyPos += (size_t)m;
+        (*request)->_responseBodyPos += (size_t)m;
 
         // While still active, extend timeout
         if (m != 0)
           libwebsocket_set_timeout(wsi, PENDING_TIMEOUT_HTTP_CONTENT, 5);
 
-        remaining = request->_responseBody.size() - request->_responseBodyPos;
+        remaining = (*request)->_responseBody.size() - (*request)->_responseBodyPos;
       }
 
       if (remaining != 0)
@@ -388,6 +391,12 @@ int WebSockets::callback(
       assert(!lws_partial_buffered(wsi));
 
       return 1;
+    }
+    case LWS_CALLBACK_CLOSED_HTTP:
+    {
+      (*request)->abort();
+      request->~shared_ptr<HttpRequest>();
+      return 0;
     }
 
     ////// SERVER
@@ -526,12 +535,14 @@ int WebSockets::callback(
   return 0;
 }
 
-void WebSockets::addHttpRoute(HttpMethod method, regex urlPattern, std::function<void(HttpRequest&)> callback)
+void WebSockets::addHttpRoute(HttpMethod method, regex urlPattern, std::function<void(shared_ptr<HttpRequest>)> callback)
 {
   _httpRoutes.emplace_back(method, urlPattern, callback);
 }
 
-HttpRequest::HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_t contentLength, string url, string queryString, HttpMethod method, function<void(HttpRequest&)>& callback)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+HttpRequest::HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_t contentLength, string url, string queryString, HttpMethod method, function<void(shared_ptr<HttpRequest>)>& callback)
 : _context(context),
   _wsi(wsi),
   _contentLength(contentLength),
@@ -545,7 +556,8 @@ HttpRequest::HttpRequest(libwebsocket_context* context, libwebsocket* wsi, size_
   _responseBody(),
   _responseBodyPos(LWS_SEND_BUFFER_PRE_PADDING),
   _responseCode(HttpStatus::Unknown),
-  _responseContentType()
+  _responseContentType(),
+  _isAborted(false)
 {
   assert(context != nullptr);
   assert(wsi != nullptr);
@@ -561,6 +573,9 @@ void HttpRequest::appendBodyChunk(byte* data, size_t len)
 
 void HttpRequest::respond(HttpStatus responseCode, std::string contentType, WebSocketBuffer responseBody)
 {
+  if (_isAborted)
+    return;
+
   // Send headers
 
   _responseCode = responseCode;
@@ -570,13 +585,18 @@ void HttpRequest::respond(HttpStatus responseCode, std::string contentType, WebS
   libwebsocket_callback_on_writable(_context, _wsi);
 }
 
-void HttpRequest::invokeCallback()
+void HttpRequest::invokeCallback(shared_ptr<HttpRequest> request)
 {
   assert(_bodyDataPos == _contentLength);
 
+  // This looks a bit weird, but we need to provide the callback the same shared_ptr that
+  // lwsxx is holding so that we don't segfault when it destroys the wsi for a closed connection
+  // which client code may later attempt to respond to asynchronously.
+  assert(request.get() == this);
+
   try
   {
-    _callback(*this);
+    _callback(request);
   }
   catch (http_exception& ex)
   {
