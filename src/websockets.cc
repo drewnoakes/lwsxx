@@ -258,6 +258,8 @@ int WebSockets::callback(
       if (!(isGet ^ isPost))
       {
         // TODO return a 405 Method Not Allowed -- libwebsockets_return_http_status ??
+        // Initialise the user data object anyway, as we will still receive LWS_CALLBACK_CLOSED_HTTP
+        new (request) shared_ptr<HttpRequest>();
         return 1;
       }
 
@@ -291,6 +293,8 @@ int WebSockets::callback(
       {
         log::warning("WebSockets::callback") << "No handler for HTTP " << (method == HttpMethod::GET ? "GET" : "POST") << " request for URL: " << url;
         // TODO return 404 Not Found -- libwebsockets_return_http_status ??
+        // Initialise the user data object anyway, as we will still receive LWS_CALLBACK_CLOSED_HTTP
+        new (request) shared_ptr<HttpRequest>();
         return 1;
       }
 
@@ -394,7 +398,8 @@ int WebSockets::callback(
     }
     case LWS_CALLBACK_CLOSED_HTTP:
     {
-      (*request)->abort();
+      if ((*request).get() != nullptr)
+        (*request)->abort();
       request->~shared_ptr<HttpRequest>();
       return 0;
     }
