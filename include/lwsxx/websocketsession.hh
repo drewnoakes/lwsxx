@@ -19,9 +19,10 @@ namespace lwsxx
     friend class WebSocketHandler;
 
   public:
+    // Details of the acceptor client this session represents
     const std::string& getHostName() const { return _hostName; }
     const std::string& getIpAddress() const { return _ipAddress; }
-    unsigned long getClientSessionId() const { return _clientSessionId; }
+    unsigned long getSessionId() const { return _sessionId; }
 
     /** Enqueue buffer for sending to the client associated with this session. */
     void send(WebSocketBuffer& buffer)
@@ -45,7 +46,7 @@ namespace lwsxx
         _ipAddress()
     {}
 
-    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long clientSessionId);
+    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long session);
 
     void send(std::vector<byte> buf);
 
@@ -55,13 +56,13 @@ namespace lwsxx
 
     // TODO the following could reasonably be confused as a callback for when clients connect to our server, rather than a callback for when our client connects to another server
     /** Called when the client connects successfully. */
-    void onClientConnected();
-
-    /** Called when the client disconnected. */
-    void onClosed();
+    void onInitiatorConnected();
 
     /** Called when the client fails to connect. */
-    void onClientConnectionError();
+    void onInitiatorConnectionError();
+
+    /** Called when the initiator is disconnected, or the acceptor is stopped. */
+    void onClosed();
 
     bool hasDataToWrite() const { return !_txQueue.empty(); }
 
@@ -78,14 +79,16 @@ namespace lwsxx
     size_t _bytesSent;
     std::mutex _txMutex;
 
+    // Details of the acceptor client this session represents
     std::string _hostName;
     std::string _ipAddress;
-    unsigned long _clientSessionId;
+    unsigned long _sessionId;
   };
 
-  inline std::ostream& operator<<(std::ostream& stream, const WebSocketSession& client)
+  inline std::ostream& operator<<(std::ostream& stream, const WebSocketSession& session)
   {
-    stream << client.getClientSessionId() << ' ' << client.getHostName() << '@' << client.getIpAddress();
+    // Only applies to acceptor sessions
+    stream << session.getSessionId() << ' ' << session.getHostName() << '@' << session.getIpAddress();
     return stream;
   }
 }

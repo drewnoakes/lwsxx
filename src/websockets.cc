@@ -18,7 +18,7 @@ using namespace std;
 
 typedef unsigned char byte;
 
-static unsigned long clientSessionId = 0;
+static unsigned long acceptorSessionId = 0;
 
 WebSockets::WebSockets(int port)
   : _port(port),
@@ -64,17 +64,19 @@ WebSockets::~WebSockets()
     libwebsocket_context_destroy(_context);
 }
 
-void WebSockets::addService(WebSocketHandler* serviceHandler, string protocol)
+void WebSockets::addAcceptor(WebSocketHandler* acceptorHandler, string protocol)
 {
   if (_context != nullptr)
     throw runtime_error("Already started");
 
-  assert(std::find_if(_serviceHandlers.begin(), _serviceHandlers.end(), [&](ServiceDetails& s) { return s.handler == serviceHandler; }) == _serviceHandlers.end());
-  _serviceHandlers.push_back({serviceHandler, protocol});
+  assert(std::find_if(_acceptorDetails.begin(), _acceptorDetails.end(),
+    [&](AcceptorDetails& s) { return s.handler == acceptorHandler; }) == _acceptorDetails.end());
+
+  _acceptorDetails.push_back({acceptorHandler, protocol});
 }
 
-void WebSockets::addClient(
-  WebSocketHandler* clientHandler,
+void WebSockets::addInitiator(
+  WebSocketHandler* initiatorHandler,
   std::string address,
   int port,
   bool sslConnection,
@@ -86,7 +88,7 @@ void WebSockets::addClient(
   if (_context != nullptr)
     throw runtime_error("Already started");
 
-  _clientHandlers.push_back({clientHandler, address, port, sslConnection, path, host, origin, protocol});
+  _initiatorDetails.push_back({initiatorHandler, address, port, sslConnection, path, host, origin, protocol});
 }
 
 void WebSockets::start()
@@ -97,42 +99,42 @@ void WebSockets::start()
   // LWS requires there to always be at least one protocol
   // HTTP always goes through the first in the array
   _protocols.push_back({
-    "",                         // name
-    callback,                   // callback
+    "",                           // name
+    callback,                     // callback
     max(sizeof(WebSocketSession),
         sizeof(shared_ptr<HttpRequest>)),
-                                // per session data size
-    4096,                       // rx buffer size
-    0,                          // protocol id
-    nullptr,                    // per-protocol user data
-    nullptr, 0                  // unused
+                                  // per session data size
+    4096,                         // rx buffer size
+    0,                            // protocol id
+    nullptr,                      // per-protocol user data
+    nullptr, 0                    // unused
   });
 
-  // Add the clients' protocols
-  for (auto client : _clientHandlers)
+  // Add the initiator protocols
+  for (auto const& initiator : _initiatorDetails)
   {
     _protocols.push_back({
-      client.protocol.c_str(),  // protocol name
-      callback,                 // callback
-      sizeof(WebSocketSession), // per session data size
-      4096,                     // rx buffer size
-      0,                        // protocol id
-      nullptr,                  // per-protocol user data
-      nullptr, 0                // unused
+      initiator.protocol.c_str(), // protocol name
+      callback,                   // callback
+      sizeof(WebSocketSession),   // per session data size
+      4096,                       // rx buffer size
+      0,                          // protocol id
+      nullptr,                    // per-protocol user data
+      nullptr, 0                  // unused
     });
   }
 
-  // Add the services' protocols
-  for (auto service : _serviceHandlers)
+  // Add the acceptor protocols
+  for (auto const& acceptor : _acceptorDetails)
   {
     _protocols.push_back({
-      service.protocol.c_str(), // protocol name
-      callback,                 // callback
-      sizeof(WebSocketSession), // per session data size
-      4096,                     // rx buffer size
-      0,                        // protocol id
-      nullptr,                  // per-protocol user data
-      nullptr, 0                // unused
+      acceptor.protocol.c_str(),  // protocol name
+      callback,                   // callback
+      sizeof(WebSocketSession),   // per session data size
+      4096,                       // rx buffer size
+      0,                          // protocol id
+      nullptr,                    // per-protocol user data
+      nullptr, 0                  // unused
     });
   }
 
@@ -153,31 +155,31 @@ void WebSockets::start()
   if (_context == nullptr)
     throw runtime_error("Error creating libwebsockets context");
 
-  for (auto client : _clientHandlers)
+  for (auto const& initiator : _initiatorDetails)
   {
     auto session = new WebSocketSession();
 
     libwebsocket* wsi = libwebsocket_client_connect_extended(
       _context,
-      client.address.c_str(),
-      client.port,
-      client.sslConnection ? 1 : 0,
-      client.path.c_str(),
-      client.host.c_str(),
-      client.origin.c_str(),
-      client.protocol.size() ? client.protocol.c_str() : nullptr,
+      initiator.address.c_str(),
+      initiator.port,
+      initiator.sslConnection ? 1 : 0,
+      initiator.path.c_str(),
+      initiator.host.c_str(),
+      initiator.origin.c_str(),
+      initiator.protocol.size() ? initiator.protocol.c_str() : nullptr,
       -1, // ietf_version_or_minus_one
       session);
 
     if (wsi == nullptr)
     {
       delete session;
-      throw runtime_error("WebSocket client connect failed");
+      throw runtime_error("WebSocket initiator connect failed");
     }
 
-    session->initialise(client.handler, _context, wsi, "", "", 0);
+    session->initialise(initiator.handler, _context, wsi, "", "", 0);
 
-    log::info("WebSockets::start") << "Client connected: " << client.address << ':' << client.port << client.path;
+    log::info("WebSockets::start") << "Initiator connected: " << initiator.address << ':' << initiator.port << initiator.path;
   }
 }
 
@@ -248,7 +250,9 @@ int WebSockets::callback(
 
   switch (reason)
   {
-    ////// HTTP
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////// HTTP ONLY
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     case LWS_CALLBACK_FILTER_HTTP_CONNECTION:
     {
@@ -427,7 +431,9 @@ int WebSockets::callback(
       return 0;
     }
 
-    ////// SERVER
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////// ACCEPTORS ONLY
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
     {
@@ -437,9 +443,9 @@ int WebSockets::callback(
       string protocolName = in ? string(static_cast<char*>(in)) : "";
 
       bool found = false;
-      for (auto& service : webSockets->_serviceHandlers)
+      for (auto& acceptor : webSockets->_acceptorDetails)
       {
-        if (service.handler->canProcess(protocolName))
+        if (acceptor.handler->canProcess(protocolName))
         {
           char hostName[256];
           char ipAddress[32];
@@ -447,7 +453,7 @@ int WebSockets::callback(
           int fd = libwebsocket_get_socket_fd(wsi);
           libwebsockets_get_peer_addresses(context, wsi, fd, hostName, sizeof(hostName), ipAddress, sizeof(ipAddress));
 
-          session->initialise(service.handler, context, wsi, hostName, ipAddress, clientSessionId++);
+          session->initialise(acceptor.handler, context, wsi, hostName, ipAddress, acceptorSessionId++);
           found = true;
           break;
         }
@@ -455,7 +461,7 @@ int WebSockets::callback(
 
       if (!found)
       {
-        log::error("WebSockets::callback") << "No handler claimed client -- closing connection";
+        log::error("WebSockets::callback") << "No acceptor handler claimed incoming connection—closing";
         return -1;
       }
 
@@ -463,7 +469,7 @@ int WebSockets::callback(
     }
     case LWS_CALLBACK_ESTABLISHED:
     {
-      log::info("WebSockets::callback") << "LWS callback established for client: " << *session;
+      log::info("WebSockets::callback") << "LWS callback established for acceptor client: " << *session;
       break;
     }
     case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -491,7 +497,9 @@ int WebSockets::callback(
       break;
     }
 
-    ////// COMMON TO WEBSOCKET CLIENT AND SERVER
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////// COMMON TO ACCEPTORS AND INITIATORS
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     case LWS_CALLBACK_CLOSED:
     {
@@ -504,14 +512,16 @@ int WebSockets::callback(
       break;
     }
 
-    ////// CLIENT
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////// INITIATORS ONLY
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     case LWS_CALLBACK_CLIENT_ESTABLISHED:
     {
       assert(context == session->_context);
       assert(wsi == session->_wsi);
       assert(session->_handler != nullptr);
-      session->onClientConnected();
+      session->onInitiatorConnected();
       if (session->hasDataToWrite())
         libwebsocket_callback_on_writable(session->_context, session->_wsi);
       break;
@@ -521,7 +531,7 @@ int WebSockets::callback(
       // Unable to complete handshake with remote server
       assert(context == session->_context);
       assert(wsi == session->_wsi);
-      session->onClientConnectionError();
+      session->onInitiatorConnectionError();
       break;
     }
     case LWS_CALLBACK_CLIENT_WRITEABLE:

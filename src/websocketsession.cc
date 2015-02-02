@@ -9,7 +9,7 @@ static const unsigned long WEBSOCKET_WRITE_BUFFER_LENGTH = 2048ul;
 using namespace lwsxx;
 using namespace std;
 
-void WebSocketSession::initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, string hostName, string ipAddress, unsigned long clientSessionId)
+void WebSocketSession::initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, string hostName, string ipAddress, unsigned long sessionId)
 {
   assert(this->_context == nullptr);
   assert(this->_wsi == nullptr);
@@ -23,7 +23,7 @@ void WebSocketSession::initialise(WebSocketHandler* handler, libwebsocket_contex
   this->_handler = handler;
   this->_hostName = hostName;
   this->_ipAddress = ipAddress;
-  this->_clientSessionId = clientSessionId;
+  this->_sessionId = sessionId;
 
   handler->addSession(this);
 }
@@ -133,10 +133,10 @@ void WebSocketSession::receive(byte* data, size_t len, bool isFinalFragment, siz
   }
 }
 
-void WebSocketSession::onClientConnected()
+void WebSocketSession::onInitiatorConnected()
 {
   // TODO if there's an initial snapshot of data for the new client, enqueue it here
-  log::info("WebSocketSession::onClientConnected") << "Client established";
+  log::info("WebSocketSession::onInitiatorConnected") << "Client established";
 }
 
 void WebSocketSession::onClosed()
@@ -144,7 +144,7 @@ void WebSocketSession::onClosed()
   log::info("WebSocketSession::onClosed") << "Client closed";
 }
 
-void WebSocketSession::onClientConnectionError()
+void WebSocketSession::onInitiatorConnectionError()
 {
-  log::error("WebSocketSession::onClientConnectionError") << "Client connection error for " << _handler->getName();
+  log::error("WebSocketSession::onInitiatorConnectionError") << "Client connection error for " << _handler->getName();
 }

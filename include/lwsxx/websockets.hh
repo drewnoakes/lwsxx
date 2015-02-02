@@ -17,7 +17,7 @@ namespace lwsxx
 
   class WebSocketHandler;
 
-  struct ClientDetails
+  struct InitiatorDetails
   {
     WebSocketHandler* handler;
     std::string address;
@@ -29,7 +29,7 @@ namespace lwsxx
     std::string protocol;
   };
 
-  struct ServiceDetails
+  struct AcceptorDetails
   {
     WebSocketHandler* handler;
     std::string protocol;
@@ -148,12 +148,12 @@ namespace lwsxx
 
     ~WebSockets();
 
-    void addService(
-      WebSocketHandler* serviceHandler,
+    void addAcceptor(
+      WebSocketHandler* acceptorHandler,
       std::string protocol);
 
-    void addClient(
-      WebSocketHandler* clientHandler,
+    void addInitiator(
+      WebSocketHandler* initiatorHandler,
       std::string address,
       int port,
       bool sslConnection,
@@ -177,8 +177,8 @@ namespace lwsxx
     int _port;
     libwebsocket_context* _context;
     std::vector<libwebsocket_protocols> _protocols;
-    std::vector<ServiceDetails> _serviceHandlers;
-    std::vector<ClientDetails> _clientHandlers;
+    std::vector<AcceptorDetails> _acceptorDetails;
+    std::vector<InitiatorDetails> _initiatorDetails;
     std::vector<HttpRouteDetails> _httpRoutes;
   };
 }
