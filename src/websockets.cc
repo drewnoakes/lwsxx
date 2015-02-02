@@ -345,6 +345,29 @@ int WebSockets::callback(
           &p, end))
           return 1;
 
+        // Add CORS headers
+
+        //     "Access-Control-Allow-Origin" "*"
+        if (lws_add_http_header_by_name(context, wsi,
+          reinterpret_cast<const unsigned char*>("Access-Control-Allow-Origin:"),
+          reinterpret_cast<const unsigned char*>("*"),
+          sizeof("*") - 1, &p, end))
+          return 1;
+
+        //     "Access-Control-Allow-Methods" "POST,GET,OPTIONS,PUT,DELETE"
+        if (lws_add_http_header_by_name(context, wsi,
+          reinterpret_cast<const unsigned char*>("Access-Control-Allow-Methods:"),
+          reinterpret_cast<const unsigned char*>("POST,GET,OPTIONS,PUT,DELETE"),
+          sizeof("POST,GET,OPTIONS,PUT,DELETE") - 1, &p, end))
+          return 1;
+
+        //     "Access-Control-Allow-Headers"  "*"
+        if (lws_add_http_header_by_name(context, wsi,
+          reinterpret_cast<const unsigned char*>("Access-Control-Allow-Headers:"),
+          reinterpret_cast<const unsigned char*>("*"),
+          sizeof("*") - 1, &p, end))
+          return 1;
+
         if (lws_add_http_header_content_length(context, wsi,
           (*request)->_responseBody.size() - LWS_SEND_BUFFER_PRE_PADDING,
           &p, end))
