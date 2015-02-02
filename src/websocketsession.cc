@@ -133,7 +133,11 @@ InitiatorSession::InitiatorSession(InitiatorDetails initiatorDetails, libwebsock
 
 void InitiatorSession::connect()
 {
-  libwebsocket* wsi = libwebsocket_client_connect_extended(
+  log::verbose("InitiatorSession::connect");
+
+  assert(_wsi == nullptr);
+
+  _wsi = libwebsocket_client_connect_extended(
     _context,
     _initiatorDetails.address.c_str(),
     _initiatorDetails.port,
@@ -145,23 +149,22 @@ void InitiatorSession::connect()
     -1, // ietf_version_or_minus_one
     this);
 
-  if (wsi == nullptr)
+  if (_wsi == nullptr)
     throw runtime_error("WebSocket initiator connect failed");
-
-  this->_wsi = wsi;
 
   log::info("InitiatorSession::connect") << "Initiator connected: " << _initiatorDetails.address << ':' << _initiatorDetails.port << _initiatorDetails.path;
 }
 
 void InitiatorSession::onInitiatorConnected()
 {
-  // TODO if there's an initial snapshot of data for the new client, enqueue it here
   log::info("WebSocketSession::onInitiatorConnected") << "Client established";
 }
 
 void InitiatorSession::onInitiatorConnectionError()
 {
   log::error("WebSocketSession::onInitiatorConnectionError") << "Initiator connection error for " << _handler->getName();
+
+  _wsi = nullptr;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
