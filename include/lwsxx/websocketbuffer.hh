@@ -13,7 +13,7 @@ namespace lwsxx
 
     inline void append(byte b) { _bytes.push_back(b); }
 
-    inline void append(byte* bytes, std::size_t len) { _bytes.insert(_bytes.end(), bytes, bytes + len); }
+    inline void append(const byte* bytes, std::size_t len) { _bytes.insert(_bytes.end(), bytes, bytes + len); }
 
     std::vector<byte> flush(bool appendPadding = true);
 
