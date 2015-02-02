@@ -12,18 +12,14 @@ typedef unsigned char byte;
 
 namespace lwsxx
 {
-  /** Dispatches lws events for both clients and services. For services, there's one instance of this type per connected client. */
-  class WebSocketSession final
+  /// Common base class for sessions of both local acceptors and initiators.
+  /// Dispatches messages to the relevant handler.
+  class WebSocketSession
   {
     friend class WebSockets;
     friend class WebSocketHandler;
 
   public:
-    // Details of the acceptor client this session represents
-    const std::string& getHostName() const { return _hostName; }
-    const std::string& getIpAddress() const { return _ipAddress; }
-    unsigned long getSessionId() const { return _sessionId; }
-
     /** Enqueue buffer for sending to the client associated with this session. */
     void send(WebSocketBuffer& buffer)
     {
@@ -35,31 +31,23 @@ namespace lwsxx
       send(move(bytes));
     }
 
-  private:
+  protected:
     WebSocketSession()
       : _context(nullptr),
         _wsi(nullptr),
         _handler(nullptr),
         _rxBufferPos(0),
-        _bytesSent(0),
-        _hostName(),
-        _ipAddress()
+        _bytesSent(0)
     {}
 
-    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long session);
+  protected:
+    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi);
 
     void send(std::vector<byte> buf);
 
     int write();
 
     void receive(byte* data, size_t len, bool isFinalFragment, size_t remainingInPacket);
-
-    // TODO the following could reasonably be confused as a callback for when clients connect to our server, rather than a callback for when our client connects to another server
-    /** Called when the client connects successfully. */
-    void onInitiatorConnected();
-
-    /** Called when the client fails to connect. */
-    void onInitiatorConnectionError();
 
     /** Called when the initiator is disconnected, or the acceptor is stopped. */
     void onClosed();
@@ -78,6 +66,22 @@ namespace lwsxx
     /// The number of bytes sent in a previous frame for the bytes at the head of the queue.
     size_t _bytesSent;
     std::mutex _txMutex;
+  };
+
+  /// Models a remote client connected to our locally hosted acceptor
+  class AcceptorSession : public WebSocketSession
+  {
+    friend class WebSockets;
+    friend class WebSocketHandler;
+
+  public:
+    // Details of the acceptor client this session represents
+    const std::string& getHostName() const { return _hostName; }
+    const std::string& getIpAddress() const { return _ipAddress; }
+    unsigned long getSessionId() const { return _sessionId; }
+
+  private:
+    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId);
 
     // Details of the acceptor client this session represents
     std::string _hostName;
@@ -85,7 +89,21 @@ namespace lwsxx
     unsigned long _sessionId;
   };
 
-  inline std::ostream& operator<<(std::ostream& stream, const WebSocketSession& session)
+  /// Models a local client connected to a remotely hosted acceptor
+  class InitiatorSession : public WebSocketSession
+  {
+    friend class WebSockets;
+    friend class WebSocketHandler;
+
+  private:
+    /** Called when the client connects successfully. */
+    void onInitiatorConnected();
+
+    /** Called when the client fails to connect. */
+    void onInitiatorConnectionError();
+  };
+
+  inline std::ostream& operator<<(std::ostream& stream, const AcceptorSession& session)
   {
     // Only applies to acceptor sessions
     stream << session.getSessionId() << ' ' << session.getHostName() << '@' << session.getIpAddress();

@@ -101,8 +101,9 @@ void WebSockets::start()
   _protocols.push_back({
     "",                           // name
     callback,                     // callback
-    max(sizeof(WebSocketSession),
-        sizeof(shared_ptr<HttpRequest>)),
+    max({sizeof(InitiatorSession),
+         sizeof(AcceptorSession),
+         sizeof(shared_ptr<HttpRequest>)}),
                                   // per session data size
     4096,                         // rx buffer size
     0,                            // protocol id
@@ -116,7 +117,7 @@ void WebSockets::start()
     _protocols.push_back({
       initiator.protocol.c_str(), // protocol name
       callback,                   // callback
-      sizeof(WebSocketSession),   // per session data size
+      sizeof(InitiatorSession),   // per session data size
       4096,                       // rx buffer size
       0,                          // protocol id
       nullptr,                    // per-protocol user data
@@ -130,7 +131,7 @@ void WebSockets::start()
     _protocols.push_back({
       acceptor.protocol.c_str(),  // protocol name
       callback,                   // callback
-      sizeof(WebSocketSession),   // per session data size
+      sizeof(AcceptorSession),    // per session data size
       4096,                       // rx buffer size
       0,                          // protocol id
       nullptr,                    // per-protocol user data
@@ -157,7 +158,7 @@ void WebSockets::start()
 
   for (auto const& initiator : _initiatorDetails)
   {
-    auto session = new WebSocketSession();
+    auto session = new InitiatorSession();
 
     libwebsocket* wsi = libwebsocket_client_connect_extended(
       _context,
@@ -177,7 +178,7 @@ void WebSockets::start()
       throw runtime_error("WebSocket initiator connect failed");
     }
 
-    session->initialise(initiator.handler, _context, wsi, "", "", 0);
+    session->initialise(initiator.handler, _context, wsi);
 
     log::info("WebSockets::start") << "Initiator connected: " << initiator.address << ':' << initiator.port << initiator.path;
   }
@@ -438,7 +439,7 @@ int WebSockets::callback(
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
     {
       // A new client has connected to our service
-      new (session) WebSocketSession();
+      new (session) AcceptorSession();
 
       string protocolName = in ? string(static_cast<char*>(in)) : "";
 
@@ -453,7 +454,7 @@ int WebSockets::callback(
           int fd = libwebsocket_get_socket_fd(wsi);
           libwebsockets_get_peer_addresses(context, wsi, fd, hostName, sizeof(hostName), ipAddress, sizeof(ipAddress));
 
-          session->initialise(acceptor.handler, context, wsi, hostName, ipAddress, acceptorSessionId++);
+          static_cast<AcceptorSession*>(session)->initialise(acceptor.handler, context, wsi, hostName, ipAddress, acceptorSessionId++);
           found = true;
           break;
         }
@@ -469,7 +470,7 @@ int WebSockets::callback(
     }
     case LWS_CALLBACK_ESTABLISHED:
     {
-      log::info("WebSockets::callback") << "LWS callback established for acceptor client: " << *session;
+      log::info("WebSockets::callback") << "LWS callback established for acceptor client: " << *static_cast<AcceptorSession*>(session);
       break;
     }
     case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -521,7 +522,7 @@ int WebSockets::callback(
       assert(context == session->_context);
       assert(wsi == session->_wsi);
       assert(session->_handler != nullptr);
-      session->onInitiatorConnected();
+      static_cast<InitiatorSession*>(session)->onInitiatorConnected();
       if (session->hasDataToWrite())
         libwebsocket_callback_on_writable(session->_context, session->_wsi);
       break;
@@ -531,7 +532,7 @@ int WebSockets::callback(
       // Unable to complete handshake with remote server
       assert(context == session->_context);
       assert(wsi == session->_wsi);
-      session->onInitiatorConnectionError();
+      static_cast<InitiatorSession*>(session)->onInitiatorConnectionError();
       break;
     }
     case LWS_CALLBACK_CLIENT_WRITEABLE:
