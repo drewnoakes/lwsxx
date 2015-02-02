@@ -158,29 +158,10 @@ void WebSockets::start()
 
   for (auto const& initiator : _initiatorDetails)
   {
-    auto session = new InitiatorSession();
+    // TODO don't new here, store _initiatorSessions instead
+    auto session = new InitiatorSession(initiator, _context);
 
-    libwebsocket* wsi = libwebsocket_client_connect_extended(
-      _context,
-      initiator.address.c_str(),
-      initiator.port,
-      initiator.sslConnection ? 1 : 0,
-      initiator.path.c_str(),
-      initiator.host.c_str(),
-      initiator.origin.c_str(),
-      initiator.protocol.size() ? initiator.protocol.c_str() : nullptr,
-      -1, // ietf_version_or_minus_one
-      session);
-
-    if (wsi == nullptr)
-    {
-      delete session;
-      throw runtime_error("WebSocket initiator connect failed");
-    }
-
-    session->initialise(initiator.handler, _context, wsi);
-
-    log::info("WebSockets::start") << "Initiator connected: " << initiator.address << ':' << initiator.port << initiator.path;
+    session->connect();
   }
 }
 

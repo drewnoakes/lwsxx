@@ -41,7 +41,6 @@ namespace lwsxx
     {}
 
   protected:
-    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi);
 
     void send(std::vector<byte> buf);
 
@@ -95,12 +94,18 @@ namespace lwsxx
     friend class WebSockets;
     friend class WebSocketHandler;
 
+    InitiatorSession(InitiatorDetails initiatorDetails, libwebsocket_context* context);
+
+    void connect();
+
   private:
     /** Called when the client connects successfully. */
     void onInitiatorConnected();
 
     /** Called when the client fails to connect. */
     void onInitiatorConnectionError();
+
+    const InitiatorDetails _initiatorDetails;
   };
 
   inline std::ostream& operator<<(std::ostream& stream, const AcceptorSession& session)

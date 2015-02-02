@@ -16,6 +16,8 @@ namespace lwsxx
   class WebSocketHandler
   {
     friend class WebSocketSession;
+    friend class AcceptorSession;
+    friend class InitiatorSession;
     friend class WebSockets;
 
   public:

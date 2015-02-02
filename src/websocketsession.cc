@@ -9,22 +9,6 @@ static const unsigned long WEBSOCKET_WRITE_BUFFER_LENGTH = 2048ul;
 using namespace lwsxx;
 using namespace std;
 
-void WebSocketSession::initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi)
-{
-  assert(this->_context == nullptr);
-  assert(this->_wsi == nullptr);
-  assert(this->_handler == nullptr);
-  assert(context);
-  assert(wsi);
-  assert(handler);
-
-  this->_context = context;
-  this->_wsi = wsi;
-  this->_handler = handler;
-
-  handler->addSession(this);
-}
-
 void WebSocketSession::send(vector<byte> buf)
 {
   lock_guard<mutex> guard(_txMutex);
@@ -137,6 +121,38 @@ void WebSocketSession::onClosed()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+InitiatorSession::InitiatorSession(InitiatorDetails initiatorDetails, libwebsocket_context* context)
+  : _initiatorDetails(initiatorDetails)
+{
+  assert(context);
+
+  _context = context;
+  _handler = _initiatorDetails.handler;
+  _handler->addSession(this);
+}
+
+void InitiatorSession::connect()
+{
+  libwebsocket* wsi = libwebsocket_client_connect_extended(
+    _context,
+    _initiatorDetails.address.c_str(),
+    _initiatorDetails.port,
+    _initiatorDetails.sslConnection ? 1 : 0,
+    _initiatorDetails.path.c_str(),
+    _initiatorDetails.host.c_str(),
+    _initiatorDetails.origin.c_str(),
+    _initiatorDetails.protocol.size() ? _initiatorDetails.protocol.c_str() : nullptr,
+    -1, // ietf_version_or_minus_one
+    this);
+
+  if (wsi == nullptr)
+    throw runtime_error("WebSocket initiator connect failed");
+
+  this->_wsi = wsi;
+
+  log::info("InitiatorSession::connect") << "Initiator connected: " << _initiatorDetails.address << ':' << _initiatorDetails.port << _initiatorDetails.path;
+}
+
 void InitiatorSession::onInitiatorConnected()
 {
   // TODO if there's an initial snapshot of data for the new client, enqueue it here
@@ -150,12 +166,23 @@ void InitiatorSession::onInitiatorConnectionError()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 void AcceptorSession::initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId)
 {
+  assert(this->_context == nullptr);
+  assert(this->_wsi == nullptr);
+  assert(this->_handler == nullptr);
+
+  assert(context);
+  assert(wsi);
+  assert(handler);
+
   this->_hostName = hostName;
   this->_ipAddress = ipAddress;
   this->_sessionId = sessionId;
 
-  WebSocketSession::initialise(handler, context, wsi);
+  this->_context = context;
+  this->_wsi = wsi;
+  this->_handler = handler;
+
+  handler->addSession(this);
 }
