@@ -20,15 +20,14 @@ namespace lwsxx
     friend class WebSocketHandler;
 
   public:
-    /** Enqueue buffer for sending to the client associated with this session. */
+    /** Enqueue buffer for sending over the websocket. */
     void send(WebSocketBuffer& buffer)
     {
       // Return if there is no data to actually send
       if (buffer.empty())
         return;
 
-      auto bytes = buffer.flush();
-      send(move(bytes));
+      send(buffer.flush());
     }
 
   protected:
@@ -40,8 +39,6 @@ namespace lwsxx
         _bytesSent(0)
     {}
 
-  protected:
-
     void send(std::vector<byte> buf);
 
     int write();
@@ -49,13 +46,13 @@ namespace lwsxx
     void receive(byte* data, size_t len, bool isFinalFragment, size_t remainingInPacket);
 
     /** Called when the initiator is disconnected, or the acceptor is stopped. */
-    void onClosed();
+    virtual void onClosed() = 0;
 
     bool hasDataToWrite() const { return !_txQueue.empty(); }
 
     libwebsocket_context* _context;
-    libwebsocket* _wsi;
     WebSocketHandler* _handler;
+    libwebsocket* _wsi;
 
     std::vector<byte> _rxBuffer;
     size_t _rxBufferPos;
@@ -79,6 +76,8 @@ namespace lwsxx
     const std::string& getIpAddress() const { return _ipAddress; }
     unsigned long getSessionId() const { return _sessionId; }
 
+    void onClosed() override;
+
   private:
     void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId);
 
@@ -99,11 +98,14 @@ namespace lwsxx
     void connect();
 
   private:
-    /** Called when the client connects successfully. */
-    void onInitiatorConnected();
+    /** Called when the initiator connects successfully. */
+    void onInitiatorEstablished();
 
-    /** Called when the client fails to connect. */
+    /** Called when the initiator fails to connect. */
     void onInitiatorConnectionError();
+
+    /** Called when the connection is closed. */
+    void onClosed() override;
 
     const InitiatorDetails _initiatorDetails;
   };

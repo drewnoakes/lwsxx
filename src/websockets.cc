@@ -503,7 +503,7 @@ int WebSockets::callback(
       assert(context == session->_context);
       assert(wsi == session->_wsi);
       assert(session->_handler != nullptr);
-      static_cast<InitiatorSession*>(session)->onInitiatorConnected();
+      static_cast<InitiatorSession*>(session)->onInitiatorEstablished();
       if (session->hasDataToWrite())
         libwebsocket_callback_on_writable(session->_context, session->_wsi);
       break;

@@ -114,11 +114,6 @@ void WebSocketSession::receive(byte* data, size_t len, bool isFinalFragment, siz
   }
 }
 
-void WebSocketSession::onClosed()
-{
-  log::info("WebSocketSession::onClosed") << "Client closed";
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 InitiatorSession::InitiatorSession(InitiatorDetails initiatorDetails, libwebsocket_context* context)
@@ -155,16 +150,21 @@ void InitiatorSession::connect()
   log::info("InitiatorSession::connect") << "Initiator connected: " << _initiatorDetails.address << ':' << _initiatorDetails.port << _initiatorDetails.path;
 }
 
-void InitiatorSession::onInitiatorConnected()
+void InitiatorSession::onInitiatorEstablished()
 {
-  log::info("WebSocketSession::onInitiatorConnected") << "Client established";
+  log::info("InitiatorSession::onInitiatorEstablished") << "Initiator established: " << _initiatorDetails.address << ':' << _initiatorDetails.port << _initiatorDetails.path;
 }
 
 void InitiatorSession::onInitiatorConnectionError()
 {
-  log::error("WebSocketSession::onInitiatorConnectionError") << "Initiator connection error for " << _handler->getName();
+  log::error("InitiatorSession::onInitiatorConnectionError") << "Initiator connection error for " << _handler->getName();
 
   _wsi = nullptr;
+}
+
+void InitiatorSession::onClosed()
+{
+  log::warning("InitiatorSession::onClosed");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -188,4 +188,9 @@ void AcceptorSession::initialise(WebSocketHandler* handler, libwebsocket_context
   this->_handler = handler;
 
   handler->addSession(this);
+}
+
+void AcceptorSession::onClosed()
+{
+  log::warning("AcceptorSession::onClosed");
 }
