@@ -6,6 +6,8 @@
 #include <libwebsockets.h>
 
 #include <rapidjson/stringbuffer.h>
+
+#include <chrono>
 #include <iostream>
 #include <queue>
 #include <mutex>
@@ -119,6 +121,8 @@ namespace lwsxx
 
     void setContext(libwebsocket_context* context);
 
+    void checkReconnect();
+
     /** Called when the initiator connects successfully. */
     void onInitiatorEstablished();
 
@@ -135,6 +139,10 @@ namespace lwsxx
     std::string _host;
     std::string _origin;
     std::string _protocol;
+    bool _isConnectRequested;
+    bool _isActuallyConnected;
+    std::chrono::high_resolution_clock _clock;
+    std::chrono::high_resolution_clock::time_point _lastConnectAttempt;
   };
 
   inline std::ostream& operator<<(std::ostream& stream, const InitiatorSession& session)

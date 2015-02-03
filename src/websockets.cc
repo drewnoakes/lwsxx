@@ -161,12 +161,15 @@ void WebSockets::service(unsigned int timeoutMillis)
 {
   assert(_context != nullptr);
 
+  for (auto& initiator : _initiatorSessions)
+    initiator->checkReconnect();
+
   int res = libwebsocket_service(_context, (int)timeoutMillis);
 
   if (res < 0)
   {
     log::error("WebSockets::service") << "libwebsocket_service returned error code: " << res;
-    throw runtime_error("libwebsocket_service returned an error code"); // TODO provide details of error
+//    throw runtime_error("libwebsocket_service returned an error code"); // TODO provide details of error
   }
 }
 

@@ -6,6 +6,7 @@ static const unsigned long WEBSOCKET_WRITE_BUFFER_LENGTH = 2048ul;
 
 using namespace lwsxx;
 using namespace std;
+using namespace std::chrono;
 
 void WebSocketSession::send(vector<byte> buf)
 {
@@ -129,7 +130,9 @@ InitiatorSession::InitiatorSession(
     _path(path),
     _host(host),
     _origin(origin),
-    _protocol(protocol)
+    _protocol(protocol),
+    _isConnectRequested(false),
+    _isActuallyConnected(false)
 {
   assert(handler);
 
@@ -149,8 +152,18 @@ void InitiatorSession::connect()
 {
   log::verbose("InitiatorSession::connect");
 
+  if (_isConnectRequested && _isActuallyConnected)
+  {
+    log::warning("InitiatorSession::connect") << "Already connected";
+    return;
+  }
+
   assert(_context != nullptr);
   assert(_wsi == nullptr);
+
+  _isConnectRequested = true;
+  _isActuallyConnected = false;
+  _lastConnectAttempt = _clock.now();
 
   _wsi = libwebsocket_client_connect_extended(
     _context,
@@ -165,9 +178,14 @@ void InitiatorSession::connect()
     this);
 
   if (_wsi == nullptr)
-    throw runtime_error("WebSocket initiator connect failed");
-
-  log::info("InitiatorSession::connect") << "Initiator connected: " << _address << ':' << _port << _path;
+  {
+    log::warning("InitiatorSession::connect") << "Initiator connection failed: " << *this;
+  }
+  else
+  {
+    _isActuallyConnected = true;
+    log::info("InitiatorSession::connect") << "Initiator connected: " << *this;
+  }
 }
 
 void InitiatorSession::onInitiatorEstablished()
@@ -179,14 +197,27 @@ void InitiatorSession::onInitiatorConnectionError()
 {
   log::error("InitiatorSession::onInitiatorConnectionError") << "Initiator connection error: " << *this;
 
+  _isActuallyConnected = false;
   _wsi = nullptr;
 }
 
 void InitiatorSession::onClosed()
 {
-  // TODO put in logic to automatically reconnect periodically!!
-//  this->connect();
-  log::warning("InitiatorSession::onClosed");
+  _isActuallyConnected = false;
+  _wsi = nullptr;
+
+  log::level("InitiatorSession::onClosed", _isConnectRequested ? LogLevel::Warning : LogLevel::Info);
+}
+
+void InitiatorSession::checkReconnect()
+{
+  if (_isConnectRequested && _isActuallyConnected)
+    return;
+
+  auto ms = duration_cast<milliseconds>(_clock.now() - _lastConnectAttempt);
+
+  if (ms > milliseconds(5000))
+    connect();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
