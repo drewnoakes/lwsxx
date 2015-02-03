@@ -36,7 +36,7 @@ namespace lwsxx
     virtual void receiveMessage(WebSocketSession* session, std::vector<byte>& message) = 0;
 
     /** Inspect/modify the queue before sending, and optionally veto the send. */
-    virtual bool onBeforeSend(lwsxx::WebSocketSession* session, std::queue<std::vector<byte>>& txQueue) { return true; }
+    virtual bool onBeforeSend(WebSocketSession* session, std::queue<std::vector<byte>>& txQueue) { return true; }
 
     virtual void onSessionAdded(WebSocketSession*) {}
     virtual void onSessionRemoved(WebSocketSession*) {}
