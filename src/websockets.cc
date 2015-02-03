@@ -101,10 +101,9 @@ void WebSockets::start()
   _protocols.push_back({
     "",                           // name
     callback,                     // callback
-    max({sizeof(InitiatorSession),
-         sizeof(AcceptorSession),
+    max({sizeof(AcceptorSession),
          sizeof(shared_ptr<HttpRequest>)}),
-                                  // per session data size
+                                  // per session data size (applies to accepted connections only)
     4096,                         // rx buffer size
     0,                            // protocol id
     nullptr,                      // per-protocol user data
@@ -117,7 +116,7 @@ void WebSockets::start()
     _protocols.push_back({
       initiator.protocol.c_str(), // protocol name
       callback,                   // callback
-      sizeof(InitiatorSession),   // per session data size
+      0,                          // per session data size (doesn't apply to initiators)
       4096,                       // rx buffer size
       0,                          // protocol id
       nullptr,                    // per-protocol user data
