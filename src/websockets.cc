@@ -1,13 +1,7 @@
 #include <lwsxx/websockets.hh>
 
-#include <iostream>
-#include <queue>
-
 #include <camshaft/log.hh>
 #include <camshaft/memory.hh>
-
-#include <lwsxx/websockethandler.hh>
-#include <lwsxx/websocketsession.hh>
 
 // TODO break lwsxx dependency upon camshaft/rapidjson
 #include <camshaft/lwsxx/websocketjsonbuffer.hh>
@@ -88,7 +82,8 @@ void WebSockets::addInitiator(
   if (_context != nullptr)
     throw runtime_error("Already started");
 
-  _initiatorDetails.push_back({initiatorHandler, address, port, sslConnection, path, host, origin, protocol});
+  auto initiator = make_unique<InitiatorSession>(initiatorHandler, address, port, sslConnection, path, host, origin, protocol);
+  _initiatorSessions.push_back(move(initiator));
 }
 
 void WebSockets::start()
@@ -99,28 +94,28 @@ void WebSockets::start()
   // LWS requires there to always be at least one protocol
   // HTTP always goes through the first in the array
   _protocols.push_back({
-    "",                           // name
-    callback,                     // callback
+    "",                            // name
+    callback,                      // callback
     max({sizeof(AcceptorSession),
          sizeof(shared_ptr<HttpRequest>)}),
-                                  // per session data size (applies to accepted connections only)
-    4096,                         // rx buffer size
-    0,                            // protocol id
-    nullptr,                      // per-protocol user data
-    nullptr, 0                    // unused
+                                   // per session data size (applies to accepted connections only)
+    4096,                          // rx buffer size
+    0,                             // protocol id
+    nullptr,                       // per-protocol user data
+    nullptr, 0                     // unused
   });
 
   // Add the initiator protocols
-  for (auto const& initiator : _initiatorDetails)
+  for (auto const& initiator : _initiatorSessions)
   {
     _protocols.push_back({
-      initiator.protocol.c_str(), // protocol name
-      callback,                   // callback
-      0,                          // per session data size (doesn't apply to initiators)
-      4096,                       // rx buffer size
-      0,                          // protocol id
-      nullptr,                    // per-protocol user data
-      nullptr, 0                  // unused
+      initiator->_protocol.c_str(), // protocol name
+      callback,                    // callback
+      0,                           // per session data size (doesn't apply to initiators)
+      4096,                        // rx buffer size
+      0,                           // protocol id
+      nullptr,                     // per-protocol user data
+      nullptr, 0                   // unused
     });
   }
 
@@ -128,13 +123,13 @@ void WebSockets::start()
   for (auto const& acceptor : _acceptorDetails)
   {
     _protocols.push_back({
-      acceptor.protocol.c_str(),  // protocol name
-      callback,                   // callback
-      sizeof(AcceptorSession),    // per session data size
-      4096,                       // rx buffer size
-      0,                          // protocol id
-      nullptr,                    // per-protocol user data
-      nullptr, 0                  // unused
+      acceptor.protocol.c_str(),   // protocol name
+      callback,                    // callback
+      sizeof(AcceptorSession),     // per session data size
+      4096,                        // rx buffer size
+      0,                           // protocol id
+      nullptr,                     // per-protocol user data
+      nullptr, 0                   // unused
     });
   }
 
@@ -155,12 +150,10 @@ void WebSockets::start()
   if (_context == nullptr)
     throw runtime_error("Error creating libwebsockets context");
 
-  for (auto const& initiator : _initiatorDetails)
+  for (auto& initiator : _initiatorSessions)
   {
-    // TODO don't new here, store _initiatorSessions instead
-    auto session = new InitiatorSession(initiator, _context);
-
-    session->connect();
+    initiator->setContext(_context);
+    initiator->connect();
   }
 }
 
@@ -419,7 +412,7 @@ int WebSockets::callback(
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
     {
       // A new client has connected to our service
-      new (session) AcceptorSession();
+      new (session) AcceptorSession(); // TODO if we return non-zero, will this still be closed?
 
       string protocolName = in ? string(static_cast<char*>(in)) : "";
 

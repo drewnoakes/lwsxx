@@ -1,7 +1,5 @@
 #include <lwsxx/websocketsession.hh>
 
-#include <lwsxx/websockethandler.hh>
-
 #include <camshaft/log.hh>
 
 static const unsigned long WEBSOCKET_WRITE_BUFFER_LENGTH = 2048ul;
@@ -116,43 +114,65 @@ void WebSocketSession::receive(byte* data, size_t len, bool isFinalFragment, siz
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-InitiatorSession::InitiatorSession(InitiatorDetails initiatorDetails, libwebsocket_context* context)
-  : _initiatorDetails(initiatorDetails)
+InitiatorSession::InitiatorSession(
+  WebSocketHandler* handler,
+  string address,
+  int port,
+  bool sslConnection,
+  string path,
+  string host,
+  string origin,
+  string protocol)
+  : _address(address),
+    _port(port),
+    _sslConnection(sslConnection),
+    _path(path),
+    _host(host),
+    _origin(origin),
+    _protocol(protocol)
 {
-  assert(context);
+  assert(handler);
+
+  _handler = handler;
+  _handler->addSession(this);
+}
+
+void InitiatorSession::setContext(libwebsocket_context* context)
+{
+  assert(context != nullptr);
+  assert(_context == nullptr);
 
   _context = context;
-  _handler = _initiatorDetails.handler;
-  _handler->addSession(this);
 }
 
 void InitiatorSession::connect()
 {
   log::verbose("InitiatorSession::connect");
 
+  assert(_context != nullptr);
   assert(_wsi == nullptr);
 
   _wsi = libwebsocket_client_connect_extended(
     _context,
-    _initiatorDetails.address.c_str(),
-    _initiatorDetails.port,
-    _initiatorDetails.sslConnection ? 1 : 0,
-    _initiatorDetails.path.c_str(),
-    _initiatorDetails.host.c_str(),
-    _initiatorDetails.origin.c_str(),
-    _initiatorDetails.protocol.size() ? _initiatorDetails.protocol.c_str() : nullptr,
+    _address.c_str(),
+    _port,
+    _sslConnection ? 1 : 0,
+    _path.c_str(),
+    _host.c_str(),
+    _origin.c_str(),
+    _protocol.size() ? _protocol.c_str() : nullptr,
     -1, // ietf_version_or_minus_one
     this);
 
   if (_wsi == nullptr)
     throw runtime_error("WebSocket initiator connect failed");
 
-  log::info("InitiatorSession::connect") << "Initiator connected: " << _initiatorDetails.address << ':' << _initiatorDetails.port << _initiatorDetails.path;
+  log::info("InitiatorSession::connect") << "Initiator connected: " << _address << ':' << _port << _path;
 }
 
 void InitiatorSession::onInitiatorEstablished()
 {
-  log::info("InitiatorSession::onInitiatorEstablished") << "Initiator established: " << _initiatorDetails.address << ':' << _initiatorDetails.port << _initiatorDetails.path;
+  log::info("InitiatorSession::onInitiatorEstablished") << "Initiator established: " << _address << ':' << _port << _path;
 }
 
 void InitiatorSession::onInitiatorConnectionError()
@@ -164,6 +184,8 @@ void InitiatorSession::onInitiatorConnectionError()
 
 void InitiatorSession::onClosed()
 {
+  // TODO put in logic to automatically reconnect periodically!!
+//  this->connect();
   log::warning("InitiatorSession::onClosed");
 }
 

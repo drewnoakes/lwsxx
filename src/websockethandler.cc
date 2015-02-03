@@ -2,6 +2,8 @@
 
 #include <lwsxx/websocketsession.hh>
 
+#include <algorithm>
+
 using namespace lwsxx;
 using namespace std;
 

@@ -1,7 +1,9 @@
 #pragma once
 
-#include "websockets.hh"
 #include "websocketbuffer.hh"
+#include "websockethandler.hh"
+
+#include <libwebsockets.h>
 
 #include <rapidjson/stringbuffer.h>
 #include <iostream>
@@ -93,11 +95,22 @@ namespace lwsxx
     friend class WebSockets;
     friend class WebSocketHandler;
 
-    InitiatorSession(InitiatorDetails initiatorDetails, libwebsocket_context* context);
-
-    void connect();
+  public:
+    InitiatorSession(
+      WebSocketHandler* handler,
+      std::string address,
+      int port,
+      bool sslConnection,
+      std::string path,
+      std::string host,
+      std::string origin,
+      std::string protocol);
 
   private:
+    void connect();
+
+    void setContext(libwebsocket_context* context);
+
     /** Called when the initiator connects successfully. */
     void onInitiatorEstablished();
 
@@ -107,7 +120,13 @@ namespace lwsxx
     /** Called when the connection is closed. */
     void onClosed() override;
 
-    const InitiatorDetails _initiatorDetails;
+    std::string _address;
+    int _port;
+    bool _sslConnection;
+    std::string _path;
+    std::string _host;
+    std::string _origin;
+    std::string _protocol;
   };
 
   inline std::ostream& operator<<(std::ostream& stream, const AcceptorSession& session)
