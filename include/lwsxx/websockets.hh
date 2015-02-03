@@ -19,7 +19,7 @@ namespace lwsxx
 
   struct AcceptorDetails
   {
-    WebSocketHandler* handler;
+    AcceptorHandler* handler;
     std::string protocol;
   };
 
@@ -31,11 +31,11 @@ namespace lwsxx
     ~WebSockets();
 
     void addAcceptor(
-      WebSocketHandler* acceptorHandler,
+      AcceptorHandler* handler,
       std::string protocol);
 
     void addInitiator(
-      WebSocketHandler* initiatorHandler,
+      InitiatorHandler* initiatorHandler,
       std::string address,
       int port,
       bool sslConnection,

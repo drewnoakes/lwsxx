@@ -7,19 +7,19 @@
 using namespace lwsxx;
 using namespace std;
 
-void WebSocketHandler::addSession(WebSocketSession* session)
+void AcceptorHandler::addSession(WebSocketSession* session)
 {
   _sessions.push_back(session);
   onSessionAdded(session);
 }
 
-void WebSocketHandler::removeSession(WebSocketSession* session)
+void AcceptorHandler::removeSession(WebSocketSession* session)
 {
   _sessions.erase(std::remove(_sessions.begin(), _sessions.end(), session));
   onSessionRemoved(session);
 }
 
-void WebSocketHandler::send(WebSocketBuffer& buffer)
+void AcceptorHandler::send(WebSocketBuffer& buffer)
 {
   // Return if there is no data to actually send
   if (buffer.empty())
@@ -36,4 +36,24 @@ void WebSocketHandler::send(WebSocketBuffer& buffer)
     for (auto session : _sessions)
       session->send(bytes);
   }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void InitiatorHandler::send(WebSocketBuffer& buffer)
+{
+  // Return if there is no data to actually send
+  if (buffer.empty())
+    return;
+
+  auto bytes = buffer.flush();
+  _session->send(move(bytes));
+}
+
+void InitiatorHandler::setSession(WebSocketSession* session)
+{
+  assert(session);
+  assert(_session == nullptr);
+
+  _session = session;
 }

@@ -22,9 +22,7 @@ namespace lwsxx
 
   public:
     /** Send the specified buffer to all connected clients. */
-    void send(WebSocketBuffer& buffer);
-
-    bool hasSession() const { return !_sessions.empty(); }
+    virtual void send(WebSocketBuffer& buffer) = 0;
 
     virtual std::string getName() const = 0;
 
@@ -37,7 +35,36 @@ namespace lwsxx
 
     /** Inspect/modify the queue before sending, and optionally veto the send. */
     virtual bool onBeforeSend(WebSocketSession* session, std::queue<std::vector<byte>>& txQueue) { return true; }
+  };
 
+  class InitiatorHandler : public WebSocketHandler
+  {
+    friend class InitiatorSession;
+
+  public:
+    void send(WebSocketBuffer& buffer) override;
+
+  protected:
+    InitiatorHandler()
+      : _session(nullptr)
+    {}
+
+    virtual void onInitiatorEstablished() {};
+
+  private:
+    void setSession(WebSocketSession* session);
+
+    WebSocketSession* _session;
+  };
+
+  class AcceptorHandler : public WebSocketHandler
+  {
+    friend class AcceptorSession;
+
+  public:
+    void send(WebSocketBuffer& buffer) override;
+
+  protected:
     virtual void onSessionAdded(WebSocketSession*) {}
     virtual void onSessionRemoved(WebSocketSession*) {}
 

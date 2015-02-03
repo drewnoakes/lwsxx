@@ -58,19 +58,19 @@ WebSockets::~WebSockets()
     libwebsocket_context_destroy(_context);
 }
 
-void WebSockets::addAcceptor(WebSocketHandler* acceptorHandler, string protocol)
+void WebSockets::addAcceptor(AcceptorHandler* handler, string protocol)
 {
   if (_context != nullptr)
     throw runtime_error("Already started");
 
   assert(std::find_if(_acceptorDetails.begin(), _acceptorDetails.end(),
-    [&](AcceptorDetails& s) { return s.handler == acceptorHandler; }) == _acceptorDetails.end());
+    [&](AcceptorDetails& s) { return s.handler == handler; }) == _acceptorDetails.end());
 
-  _acceptorDetails.push_back({acceptorHandler, protocol});
+  _acceptorDetails.push_back({handler, protocol});
 }
 
 void WebSockets::addInitiator(
-  WebSocketHandler* initiatorHandler,
+  InitiatorHandler* handler,
   std::string address,
   int port,
   bool sslConnection,
@@ -82,7 +82,7 @@ void WebSockets::addInitiator(
   if (_context != nullptr)
     throw runtime_error("Already started");
 
-  auto initiator = make_unique<InitiatorSession>(initiatorHandler, address, port, sslConnection, path, host, origin, protocol);
+  auto initiator = make_unique<InitiatorSession>(handler, address, port, sslConnection, path, host, origin, protocol);
   _initiatorSessions.push_back(move(initiator));
 }
 
@@ -482,7 +482,6 @@ int WebSockets::callback(
     {
       assert(context == session->_context);
       assert(wsi == session->_wsi);
-      session->_handler->removeSession(session);
       session->onClosed();
       // TODO is this the right thing to do for all sessions (client & server)?
       session->~WebSocketSession();

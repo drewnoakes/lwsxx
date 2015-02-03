@@ -21,7 +21,8 @@ namespace lwsxx
   class WebSocketSession
   {
     friend class WebSockets;
-    friend class WebSocketHandler;
+    friend class AcceptorHandler;
+    friend class InitiatorHandler;
 
   public:
     /** Enqueue buffer for sending over the websocket. */
@@ -36,13 +37,18 @@ namespace lwsxx
 
   protected:
     WebSocketSession()
-      : _context(nullptr),
+      : _handler(nullptr),
+        _context(nullptr),
         _wsi(nullptr),
-        _handler(nullptr),
         _rxBufferPos(0),
         _bytesSent(0)
     {}
 
+    WebSocketHandler* _handler;
+    libwebsocket_context* _context;
+    libwebsocket* _wsi;
+
+  private:
     void send(std::vector<byte> buf);
 
     int write();
@@ -53,10 +59,6 @@ namespace lwsxx
     virtual void onClosed() = 0;
 
     bool hasDataToWrite() const { return !_txQueue.empty(); }
-
-    libwebsocket_context* _context;
-    WebSocketHandler* _handler;
-    libwebsocket* _wsi;
 
     std::vector<byte> _rxBuffer;
     size_t _rxBufferPos;
@@ -84,7 +86,7 @@ namespace lwsxx
     void onClosed() override;
 
   private:
-    void initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId);
+    void initialise(AcceptorHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId);
 
     // Details of the acceptor client this session represents
     std::string _hostName;
@@ -107,7 +109,7 @@ namespace lwsxx
 
   public:
     InitiatorSession(
-      WebSocketHandler* handler,
+      InitiatorHandler* handler,
       std::string address,
       int port,
       bool sslConnection,

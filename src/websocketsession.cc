@@ -116,7 +116,7 @@ void WebSocketSession::receive(byte* data, size_t len, bool isFinalFragment, siz
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 InitiatorSession::InitiatorSession(
-  WebSocketHandler* handler,
+  InitiatorHandler* handler,
   string address,
   int port,
   bool sslConnection,
@@ -137,7 +137,7 @@ InitiatorSession::InitiatorSession(
   assert(handler);
 
   _handler = handler;
-  _handler->addSession(this);
+  handler->setSession(this);
 }
 
 void InitiatorSession::setContext(libwebsocket_context* context)
@@ -181,16 +181,14 @@ void InitiatorSession::connect()
   {
     log::warning("InitiatorSession::connect") << "Initiator connection failed: " << *this;
   }
-  else
-  {
-    _isActuallyConnected = true;
-    log::info("InitiatorSession::connect") << "Initiator connected: " << *this;
-  }
 }
 
 void InitiatorSession::onInitiatorEstablished()
 {
   log::info("InitiatorSession::onInitiatorEstablished") << "Initiator established: " << *this;
+
+  _isActuallyConnected = true;
+  static_cast<InitiatorHandler*>(_handler)->onInitiatorEstablished();
 }
 
 void InitiatorSession::onInitiatorConnectionError()
@@ -222,7 +220,7 @@ void InitiatorSession::checkReconnect()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void AcceptorSession::initialise(WebSocketHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId)
+void AcceptorSession::initialise(AcceptorHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId)
 {
   assert(this->_context == nullptr);
   assert(this->_wsi == nullptr);
@@ -246,4 +244,5 @@ void AcceptorSession::initialise(WebSocketHandler* handler, libwebsocket_context
 void AcceptorSession::onClosed()
 {
   log::warning("AcceptorSession::onClosed");
+  static_cast<AcceptorHandler*>(_handler)->removeSession(this);
 }
