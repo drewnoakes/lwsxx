@@ -71,6 +71,7 @@ namespace lwsxx
   {
     friend class WebSockets;
     friend class WebSocketHandler;
+    friend std::ostream& operator<<(std::ostream& stream, const AcceptorSession& session);
 
   public:
     // Details of the acceptor client this session represents
@@ -89,11 +90,18 @@ namespace lwsxx
     unsigned long _sessionId;
   };
 
+  inline std::ostream& operator<<(std::ostream& stream, const AcceptorSession& session)
+  {
+    stream << session.getSessionId() << ' ' << session.getHostName() << '@' << session.getIpAddress();
+    return stream;
+  }
+
   /// Models a local client connected to a remotely hosted acceptor
   class InitiatorSession : public WebSocketSession
   {
     friend class WebSockets;
     friend class WebSocketHandler;
+    friend std::ostream& operator<<(std::ostream& stream, const InitiatorSession& session);
 
   public:
     InitiatorSession(
@@ -129,10 +137,12 @@ namespace lwsxx
     std::string _protocol;
   };
 
-  inline std::ostream& operator<<(std::ostream& stream, const AcceptorSession& session)
+  inline std::ostream& operator<<(std::ostream& stream, const InitiatorSession& session)
   {
-    // Only applies to acceptor sessions
-    stream << session.getSessionId() << ' ' << session.getHostName() << '@' << session.getIpAddress();
+    stream
+      << session._handler->getName() << ' '
+      << "ws://" << session._address << ':' << session._port << session._path
+      << " (protocol \"" << session._protocol << "\")";
     return stream;
   }
 }

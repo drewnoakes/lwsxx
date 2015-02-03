@@ -172,12 +172,12 @@ void InitiatorSession::connect()
 
 void InitiatorSession::onInitiatorEstablished()
 {
-  log::info("InitiatorSession::onInitiatorEstablished") << "Initiator established: " << _address << ':' << _port << _path;
+  log::info("InitiatorSession::onInitiatorEstablished") << "Initiator established: " << *this;
 }
 
 void InitiatorSession::onInitiatorConnectionError()
 {
-  log::error("InitiatorSession::onInitiatorConnectionError") << "Initiator connection error for " << _handler->getName();
+  log::error("InitiatorSession::onInitiatorConnectionError") << "Initiator connection error: " << *this;
 
   _wsi = nullptr;
 }
