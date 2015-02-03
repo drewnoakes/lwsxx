@@ -479,8 +479,6 @@ int WebSockets::callback(
       assert(context == session->_context);
       assert(wsi == session->_wsi);
       session->onClosed();
-      // TODO is this the right thing to do for all sessions (client & server)?
-      session->~WebSocketSession();
       break;
     }
 

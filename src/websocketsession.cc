@@ -178,9 +178,7 @@ void InitiatorSession::connect()
     this);
 
   if (_wsi == nullptr)
-  {
     log::warning("InitiatorSession::connect") << "Initiator connection failed: " << *this;
-  }
 }
 
 void InitiatorSession::onInitiatorEstablished()
@@ -245,4 +243,7 @@ void AcceptorSession::onClosed()
 {
   log::warning("AcceptorSession::onClosed");
   static_cast<AcceptorHandler*>(_handler)->removeSession(this);
+
+  // Destroy ourselves (note we are created using placement new so need to do this)
+  this->~AcceptorSession();
 }
