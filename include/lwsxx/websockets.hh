@@ -17,15 +17,11 @@ namespace lwsxx
 {
   typedef unsigned char byte;
 
-  class WebSocketHandler;
-
   struct AcceptorDetails
   {
     WebSocketHandler* handler;
     std::string protocol;
   };
-
-  class WebSockets;
 
   class WebSockets
   {
