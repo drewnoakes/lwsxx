@@ -164,13 +164,9 @@ void WebSockets::service(unsigned int timeoutMillis)
   for (auto& initiator : _initiatorSessions)
     initiator->checkReconnect();
 
-  int res = libwebsocket_service(_context, (int)timeoutMillis);
-
-  if (res < 0)
-  {
-    log::error("WebSockets::service") << "libwebsocket_service returned error code: " << res;
-//    throw runtime_error("libwebsocket_service returned an error code"); // TODO provide details of error
-  }
+  // NOTE this can return an error code (if an initiator connection fails) but there's nothing useful
+  // to do with that information.
+  libwebsocket_service(_context, (int)timeoutMillis);
 }
 
 string getHeader(libwebsocket* wsi, lws_token_indexes h)
