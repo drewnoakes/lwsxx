@@ -105,6 +105,7 @@ namespace lwsxx
   {
     friend class WebSockets;
     friend class WebSocketHandler;
+    friend class InitiatorHandler;
     friend std::ostream& operator<<(std::ostream& stream, const InitiatorSession& session);
 
   public:

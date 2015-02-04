@@ -12,6 +12,7 @@ namespace lwsxx
 {
   class WebSocketBuffer;
   class WebSocketSession;
+  class InitiatorSession;
 
   class WebSocketHandler
   {
@@ -44,6 +45,8 @@ namespace lwsxx
   public:
     void send(WebSocketBuffer& buffer) override;
 
+    bool isConnected() const;
+
   protected:
     InitiatorHandler()
       : _session(nullptr)
@@ -52,9 +55,9 @@ namespace lwsxx
     virtual void onInitiatorEstablished() {};
 
   private:
-    void setSession(WebSocketSession* session);
+    void setSession(InitiatorSession* session);
 
-    WebSocketSession* _session;
+    InitiatorSession* _session;
   };
 
   class AcceptorHandler : public WebSocketHandler
@@ -63,6 +66,8 @@ namespace lwsxx
 
   public:
     void send(WebSocketBuffer& buffer) override;
+
+    size_t getSessionCount() const { return _sessions.size(); }
 
   protected:
     virtual void onSessionAdded(WebSocketSession*) {}

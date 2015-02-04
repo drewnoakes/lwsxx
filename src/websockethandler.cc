@@ -50,10 +50,15 @@ void InitiatorHandler::send(WebSocketBuffer& buffer)
   _session->send(move(bytes));
 }
 
-void InitiatorHandler::setSession(WebSocketSession* session)
+void InitiatorHandler::setSession(InitiatorSession* session)
 {
   assert(session);
   assert(_session == nullptr);
 
   _session = session;
+}
+
+bool InitiatorHandler::isConnected() const
+{
+  return _session != nullptr && _session->_isActuallyConnected;
 }
