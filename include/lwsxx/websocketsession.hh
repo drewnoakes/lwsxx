@@ -56,7 +56,7 @@ namespace lwsxx
     void receive(byte* data, size_t len, bool isFinalFragment, size_t remainingInPacket);
 
     /** Called when the initiator is disconnected, or the acceptor is stopped. */
-    virtual void onClosed() = 0;
+    virtual void close() = 0;
 
     bool hasDataToWrite() const { return !_txQueue.empty(); }
 
@@ -83,7 +83,7 @@ namespace lwsxx
     const std::string& getIpAddress() const { return _ipAddress; }
     unsigned long getSessionId() const { return _sessionId; }
 
-    void onClosed() override;
+    void close() override;
 
   private:
     void initialise(AcceptorHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId);
@@ -133,7 +133,7 @@ namespace lwsxx
     void onInitiatorConnectionError();
 
     /** Called when the connection is closed. */
-    void onClosed() override;
+    void close() override;
 
     std::string _address;
     int _port;

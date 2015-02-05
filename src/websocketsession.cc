@@ -197,12 +197,12 @@ void InitiatorSession::onInitiatorConnectionError()
   _wsi = nullptr;
 }
 
-void InitiatorSession::onClosed()
+void InitiatorSession::close()
 {
   _isActuallyConnected = false;
   _wsi = nullptr;
 
-  log::level("InitiatorSession::onClosed", _isConnectRequested ? LogLevel::Warning : LogLevel::Info);
+  log::level("InitiatorSession::close", _isConnectRequested ? LogLevel::Warning : LogLevel::Info);
 }
 
 void InitiatorSession::checkReconnect()
@@ -220,6 +220,8 @@ void InitiatorSession::checkReconnect()
 
 void AcceptorSession::initialise(AcceptorHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId)
 {
+  log::info("AcceptorSession::initialise") << "Acceptor client initialised: " << *this;
+
   assert(this->_context == nullptr);
   assert(this->_wsi == nullptr);
   assert(this->_handler == nullptr);
@@ -239,9 +241,10 @@ void AcceptorSession::initialise(AcceptorHandler* handler, libwebsocket_context*
   handler->addSession(this);
 }
 
-void AcceptorSession::onClosed()
+void AcceptorSession::close()
 {
-  log::warning("AcceptorSession::onClosed");
+  log::info("AcceptorSession::close") << "Acceptor client closed: " << *this;
+
   static_cast<AcceptorHandler*>(_handler)->removeSession(this);
 
   // Destroy ourselves (note we are created using placement new so need to do this)

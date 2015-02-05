@@ -440,11 +440,6 @@ int WebSockets::callback(
 
       break;
     }
-    case LWS_CALLBACK_ESTABLISHED:
-    {
-      log::info("WebSockets::callback") << "LWS callback established for acceptor client: " << *static_cast<AcceptorSession*>(session);
-      break;
-    }
     case LWS_CALLBACK_SERVER_WRITEABLE:
     {
       assert(context == session->_context);
@@ -478,7 +473,7 @@ int WebSockets::callback(
     {
       assert(context == session->_context);
       assert(wsi == session->_wsi);
-      session->onClosed();
+      session->close();
       break;
     }
 
