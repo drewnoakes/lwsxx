@@ -220,8 +220,6 @@ void InitiatorSession::checkReconnect()
 
 void AcceptorSession::initialise(AcceptorHandler* handler, libwebsocket_context* context, libwebsocket* wsi, std::string hostName, std::string ipAddress, unsigned long sessionId)
 {
-  log::info("AcceptorSession::initialise") << "Acceptor client initialised: " << *this;
-
   assert(this->_context == nullptr);
   assert(this->_wsi == nullptr);
   assert(this->_handler == nullptr);
@@ -237,6 +235,8 @@ void AcceptorSession::initialise(AcceptorHandler* handler, libwebsocket_context*
   this->_context = context;
   this->_wsi = wsi;
   this->_handler = handler;
+
+  log::info("AcceptorSession::initialise") << "Acceptor client initialised: " << *this;
 
   handler->addSession(this);
 }
