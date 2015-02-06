@@ -7,13 +7,13 @@
 using namespace lwsxx;
 using namespace std;
 
-void AcceptorHandler::addSession(WebSocketSession* session)
+void AcceptorHandler::addSession(AcceptorSession* session)
 {
   _sessions.push_back(session);
   onSessionAdded(session);
 }
 
-void AcceptorHandler::removeSession(WebSocketSession* session)
+void AcceptorHandler::removeSession(AcceptorSession* session)
 {
   _sessions.erase(std::remove(_sessions.begin(), _sessions.end(), session));
   onSessionRemoved(session);

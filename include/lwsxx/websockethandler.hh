@@ -12,6 +12,7 @@ namespace lwsxx
 {
   class WebSocketBuffer;
   class WebSocketSession;
+  class AcceptorSession;
   class InitiatorSession;
 
   class WebSocketHandler
@@ -70,13 +71,13 @@ namespace lwsxx
     size_t getSessionCount() const { return _sessions.size(); }
 
   protected:
-    virtual void onSessionAdded(WebSocketSession*) {}
-    virtual void onSessionRemoved(WebSocketSession*) {}
+    virtual void onSessionAdded(AcceptorSession*) {}
+    virtual void onSessionRemoved(AcceptorSession*) {}
 
   private:
-    void addSession(WebSocketSession* session);
-    void removeSession(WebSocketSession* session);
+    void addSession(AcceptorSession* session);
+    void removeSession(AcceptorSession* session);
 
-    std::vector<WebSocketSession*> _sessions;
+    std::vector<AcceptorSession*> _sessions;
   };
 }
